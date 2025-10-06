@@ -174,3 +174,45 @@
 .primaryBtn:hover:not(:disabled) {
 	background: #3179f5;
 }
+
+/* Multi-select employees */
+.multiBox {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	background: #121c27;
+	border: 1px solid #334;
+	padding: 8px;
+	border-radius: 6px;
+}
+.selectedChips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	min-height: 32px;
+}
+.chip {
+	background: #1e2a38;
+	border: 1px solid #2b3b4f;
+	padding: 4px 8px;
+	border-radius: 20px;
+	font-size: 12px;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+.chipRemove {
+	background: transparent;
+	color: #fff;
+	border: none;
+	cursor: pointer;
+	font-size: 14px;
+	line-height: 1;
+}
+.chipRemove:hover {
+	color: #ff6b6b;
+}
+.placeholder {
+	color: #667;
+	font-size: 12px;
+}

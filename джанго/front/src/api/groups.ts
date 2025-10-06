@@ -8,6 +8,17 @@ async function loadMock() {
 	return mock
 }
 
+// Admin / global listing (for management UI)
+// Backend endpoint assumption: GET /groups/?page=&page_size=&search=
+// For now returns full array (no pagination) in mock mode.
+export async function listAllGroups(): Promise<ProfileGroup[]> {
+	if (USE_MOCK) {
+		const m = await loadMock()
+		return (m as any).groups?.map((g: ProfileGroup) => ({ ...g })) || []
+	}
+	return http<ProfileGroup[]>(`/groups/`, { auth: true })
+}
+
 // Backend mapping (intended production endpoints):
 //  GET    /groups/{id}/                          -> getGroup
 //  GET    /users/{user_id}/groups/               -> listUserGroups

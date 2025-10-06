@@ -8,6 +8,9 @@ export interface Department {
 	description?: string
 	head_id?: number | null
 	head?: UserPublic | null
+	/** Заместитель заведующего кафедрой (frontend only for now, optional). */
+	deputy_id?: number | null
+	deputy?: UserPublic | null
 	updated_at?: string
 	created_at?: string
 }
@@ -18,6 +21,8 @@ export interface DepartmentInput {
 	code?: string
 	description?: string
 	head_id?: number | null
+	/** Optional deputy on create/update (mock mode only until backend supports). */
+	deputy_id?: number | null
 }
 
 export interface DepartmentInfo {
@@ -70,6 +75,7 @@ export function buildDepartmentPayload(
 		code: raw.code?.trim() || undefined,
 		description: raw.description?.trim() || undefined,
 		head_id: raw.head_id ?? undefined,
+		deputy_id: raw.deputy_id ?? undefined,
 	}
 }
 

@@ -4,7 +4,16 @@ import type {
 	DepartmentInput,
 	EmployeeOption,
 } from '../types/department'
+import { API_USE_MOCK } from './config'
 import { http } from './http'
+// Lazy mock imports to avoid bundling when not needed
+let mock: any
+async function ensureMock() {
+	if (!mock) {
+		mock = await import('./departments.mockState')
+	}
+	return mock
+}
 
 // =============================
 // Department & Staff API (real backend)
@@ -23,12 +32,22 @@ import { http } from './http'
 // =============================
 
 /** Список кафедр (без detail-полей). */
-export function listDepartments(): Promise<Department[]> {
+export async function listDepartments(): Promise<Department[]> {
+	if (API_USE_MOCK) {
+		const m = await ensureMock()
+		return m.msListDepartments()
+	}
 	return http<Department[]>('departments/', { auth: false })
 }
 
 /** Создание кафедры (требует staff права). */
-export function createDepartment(data: DepartmentInput): Promise<Department> {
+export async function createDepartment(
+	data: DepartmentInput
+): Promise<Department> {
+	if (API_USE_MOCK) {
+		const m = await ensureMock()
+		return m.msCreateDepartment(data)
+	}
 	return http<Department>('departments/', {
 		method: 'POST',
 		body: JSON.stringify(data),
@@ -37,10 +56,14 @@ export function createDepartment(data: DepartmentInput): Promise<Department> {
 }
 
 /** Обновление кафедры. Используем PATCH чтобы отправлять только изменённые поля. */
-export function updateDepartment(
+export async function updateDepartment(
 	id: number,
 	data: Partial<DepartmentInput>
 ): Promise<Department> {
+	if (API_USE_MOCK) {
+		const m = await ensureMock()
+		return m.msUpdateDepartment(id, data)
+	}
 	return http<Department>(`departments/${id}/`, {
 		method: 'PATCH',
 		body: JSON.stringify(data),
@@ -49,12 +72,23 @@ export function updateDepartment(
 }
 
 /** Удаление кафедры. */
-export function deleteDepartment(id: number): Promise<void> {
+export async function deleteDepartment(id: number): Promise<void> {
+	if (API_USE_MOCK) {
+		const m = await ensureMock()
+		m.msDeleteDepartment(id)
+		return
+	}
 	return http<void>(`departments/${id}/`, { method: 'DELETE', auth: true })
 }
 
 /** Детальная информация (включает info, groups, employees). */
-export function getDepartmentDetail(id: number): Promise<DepartmentDetail> {
+export async function getDepartmentDetail(
+	id: number
+): Promise<DepartmentDetail> {
+	if (API_USE_MOCK) {
+		const m = await ensureMock()
+		return m.msGetDepartmentDetail(id)
+	}
 	return http<DepartmentDetail>(`departments/${id}/`, { auth: false })
 }
 
@@ -71,21 +105,35 @@ export function upsertDepartmentInfo(
 }
 
 /** Список пользователей (для выбора заведующего и сотрудников). */
-export function listEmployees(): Promise<EmployeeOption[]> {
+export async function listEmployees(): Promise<EmployeeOption[]> {
+	if (API_USE_MOCK) {
+		const m = await ensureMock()
+		return m.mockEmployees
+	}
 	return http<EmployeeOption[]>('employees/', { auth: false })
 }
 
 /** Список сотрудников конкретной кафедры (если нужен отдельно от detail). */
-export function listDepartmentEmployees(id: number) {
+export async function listDepartmentEmployees(id: number) {
+	if (API_USE_MOCK) {
+		const m = await ensureMock()
+		return m.msResolveDepartmentEmployees(id)
+	}
 	return http(`departments/${id}/employees/`, { auth: false })
 }
 
 /** Добавить сотрудника кафедры. */
-export function addDepartmentEmployee(
+export async function addDepartmentEmployee(
 	departmentId: number,
 	user_id: number,
 	position?: string
 ) {
+	if (API_USE_MOCK) {
+		const m = await ensureMock()
+		const existing = m.msGetDepartmentEmployeeIds(departmentId)
+		m.msSetDepartmentEmployees(departmentId, [...existing, user_id])
+		return
+	}
 	return http(`departments/${departmentId}/add_employee/`, {
 		method: 'POST',
 		body: JSON.stringify({ user_id, position }),
@@ -94,15 +142,47 @@ export function addDepartmentEmployee(
 }
 
 /** Удалить сотрудника кафедры. */
-export function removeDepartmentEmployee(
+export async function removeDepartmentEmployee(
 	departmentId: number,
 	user_id: number
 ) {
+	if (API_USE_MOCK) {
+		const m = await ensureMock()
+		const existing: number[] = m.msGetDepartmentEmployeeIds(departmentId)
+		m.msSetDepartmentEmployees(
+			departmentId,
+			existing.filter((id: number) => id !== user_id)
+		)
+		return
+	}
 	return http(`departments/${departmentId}/remove-employee/`, {
 		method: 'POST',
 		body: JSON.stringify({ user_id }),
 		auth: true,
 	})
+}
+
+// Mock-only convenience to list employees not yet assigned to other departments (excluding current editing dept)
+export async function listAssignableEmployees(currentDeptId?: number) {
+	if (API_USE_MOCK) {
+		const m = await ensureMock()
+		return m.msListAssignableEmployees(currentDeptId)
+	}
+	// Backend analogue could be GET /employees/?available_for_department=<id>
+	return listEmployees()
+}
+
+// Batch replace department employees (mock only; backend would have a dedicated endpoint)
+export async function setDepartmentEmployees(
+	departmentId: number,
+	employeeIds: number[]
+) {
+	if (API_USE_MOCK) {
+		const m = await ensureMock()
+		m.msSetDepartmentEmployees(departmentId, employeeIds)
+		return
+	}
+	// For real backend we would diff and call add/remove endpoints; left unimplemented now.
 }
 
 // Utility: нормализовать payload перед отправкой (обрезка пробелов, undefined вместо пустых строк)
