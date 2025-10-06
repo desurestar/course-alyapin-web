@@ -1,34 +1,31 @@
 import React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { List } from '../../components/list/list'
+import { useDepartment } from '../../hooks/useDepartment'
 import styles from './departmentPage.module.css'
-
-import {
-	List,
-	type DepartmentRef,
-	type Employee,
-	type ResearchGroup,
-} from '../../components/list/list'
-import {
-	getDepartmentById,
-	getEmployeesByDepartment,
-	getGroupsByDepartment,
-} from '../../mocks/department.mocks'
 
 export const DepartmentPage: React.FC = () => {
 	const params = useParams()
 	const navigate = useNavigate()
 	const id = Number(params.id)
+	const { department, loading, error } = useDepartment(
+		Number.isFinite(id) ? id : undefined
+	)
 
-	const department: DepartmentRef | undefined = Number.isFinite(id)
-		? getDepartmentById(id)
-		: undefined
-	const employees: Employee[] = Number.isFinite(id)
-		? getEmployeesByDepartment(id)
-		: []
-	const groups: ResearchGroup[] = Number.isFinite(id)
-		? getGroupsByDepartment(id)
-		: []
-
+	if (loading) {
+		return (
+			<main className={styles.main}>
+				<div className={styles.info}>Загрузка...</div>
+			</main>
+		)
+	}
+	if (error) {
+		return (
+			<main className={styles.main}>
+				<div className={styles.error}>{error}</div>
+			</main>
+		)
+	}
 	if (!department) {
 		return (
 			<main className={styles.main}>
@@ -42,6 +39,12 @@ export const DepartmentPage: React.FC = () => {
 		)
 	}
 
+	const employees = department.employees.map(e => ({
+		id: e.id,
+		name: e.full_name,
+	}))
+	const groups = department.groups.map(g => ({ id: g.id, name: g.name }))
+
 	return (
 		<main className={styles.main}>
 			<section className={styles.headerCard}>
@@ -54,16 +57,38 @@ export const DepartmentPage: React.FC = () => {
 				<div className={styles.meta}>
 					<div>
 						<span className={styles.muted}>Заведующий: </span>
-						{department.headName || '—'}
+						{department.head?.full_name || '—'}
 					</div>
 					<div>
-						<span className={styles.muted}>Телефон: </span>
-						{department.phone || '—'}
+						<span className={styles.muted}>Код: </span>
+						{department.code || '—'}
 					</div>
 				</div>
+				{department.info && (
+					<div className={styles.infoBlocks}>
+						{department.info.history && (
+							<p>
+								<strong>История: </strong>
+								{department.info.history}
+							</p>
+						)}
+						{department.info.mission && (
+							<p>
+								<strong>Миссия: </strong>
+								{department.info.mission}
+							</p>
+						)}
+						{department.info.scientific_activities && (
+							<p>
+								<strong>Научная деятельность: </strong>
+								{department.info.scientific_activities}
+							</p>
+						)}
+					</div>
+				)}
 			</section>
 
-			<List<Employee>
+			<List
 				variant='employees'
 				title='Работники кафедры'
 				items={employees}
@@ -71,7 +96,7 @@ export const DepartmentPage: React.FC = () => {
 				autoNavigate
 			/>
 
-			<List<ResearchGroup>
+			<List
 				variant='groups'
 				title='Научные коллективы кафедры'
 				items={groups}
@@ -81,3 +106,7 @@ export const DepartmentPage: React.FC = () => {
 		</main>
 	)
 }
+
+// NOTE: To integrate with real backend, replace getDepartmentDetail implementation in api/department.ts with http requests.
+// Example: http(`departments/${id}/`, { auth:false }) returning DepartmentDetail shape.
+// Employees & groups expected inline; if separate endpoints, fetch in parallel inside useDepartment.

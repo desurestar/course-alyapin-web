@@ -38,6 +38,29 @@ export interface EmployeeOption {
 	last_name?: string
 }
 
+export interface DepartmentEmployee {
+	id: number
+	full_name: string
+	position?: string
+	email?: string
+	phone?: string
+}
+
+export interface ResearchGroup {
+	id: number
+	name: string
+	description?: string
+	leader_id?: number | null
+	leader_name?: string
+	members_count?: number
+}
+
+export interface DepartmentDetail extends Department {
+	info?: DepartmentInfo
+	employees: DepartmentEmployee[]
+	groups: ResearchGroup[]
+}
+
 export function buildDepartmentPayload(
 	raw: Partial<DepartmentInput>
 ): DepartmentInput {
