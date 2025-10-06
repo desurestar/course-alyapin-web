@@ -41,7 +41,10 @@ export const DepartmentPage: React.FC = () => {
 
 	const employees = department.employees.map(e => ({
 		id: e.id,
-		name: e.full_name,
+		fullName: e.full_name,
+		position: (e as any).position,
+		email: (e as any).email,
+		phone: (e as any).phone,
 	}))
 	const groups = department.groups.map(g => ({ id: g.id, name: g.name }))
 
