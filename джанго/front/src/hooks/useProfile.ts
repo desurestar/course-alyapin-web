@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
 	addGroupMember,
 	createArticle,
@@ -12,6 +12,7 @@ import {
 	updateArticle,
 	updateGroup,
 	updateProfile,
+	uploadAvatar,
 } from '../api/profile'
 import { useAuth } from '../auth/auth'
 import type { UserPublic } from '../types/auth'
@@ -29,6 +30,9 @@ export function useProfile(userId: number) {
 	const [error, setError] = useState<string | null>(null)
 	const [saving, setSaving] = useState(false)
 	const [candidates, setCandidates] = useState<UserPublic[]>([])
+	const [candidateQuery, setCandidateQuery] = useState('')
+	const [candidateLoading, setCandidateLoading] = useState(false)
+	const candidateAbort = useRef<number | null>(null)
 
 	const load = useCallback(async () => {
 		if (!currentUser) return
@@ -48,26 +52,66 @@ export function useProfile(userId: number) {
 		load()
 	}, [load])
 
-	const refreshCandidates = useCallback(async () => {
-		if (!profile) return
-		const usedIds = profile.articles.flatMap(a => a.authors.map(au => au.id))
-		const list = await listCoAuthorCandidates(
-			Array.from(new Set([profile.id, ...usedIds]))
-		)
-		setCandidates(list)
-	}, [profile])
+	const refreshCandidates = useCallback(
+		async (q?: string) => {
+			if (!profile) return
+			setCandidateLoading(true)
+			try {
+				const usedIds = profile.articles.flatMap(a =>
+					a.authors.map(au => au.id)
+				)
+				const list = await listCoAuthorCandidates(
+					Array.from(new Set([profile.id, ...usedIds]))
+				)
+				const filtered = q
+					? list.filter(c => {
+							const name = (
+								c.full_name || `${c.first_name} ${c.last_name}`
+							).toLowerCase()
+							return name.includes(q.toLowerCase())
+					  })
+					: list
+				setCandidates(filtered)
+			} finally {
+				setCandidateLoading(false)
+			}
+		},
+		[profile]
+	)
+
+	useEffect(() => {
+		if (candidateAbort.current) window.clearTimeout(candidateAbort.current)
+		candidateAbort.current = window.setTimeout(() => {
+			refreshCandidates(candidateQuery)
+		}, 350)
+		return () => {
+			if (candidateAbort.current) window.clearTimeout(candidateAbort.current)
+		}
+	}, [candidateQuery, refreshCandidates])
 
 	const saveProfile = useCallback(
-		async (patch: Partial<ProfileDetail>) => {
+		async (patch: Partial<ProfileDetail> & { avatarFile?: File }) => {
 			if (!profile) return
 			setSaving(true)
 			try {
-				// sanitize fields not accepted by backend mock (null -> undefined)
-				// avatar (data URL) can be passed through directly in patch.avatar
+				let avatarUrl: string | undefined
+				if (patch.avatarFile) {
+					avatarUrl = await uploadAvatar(profile.id, patch.avatarFile)
+				}
 				const backendPatch: any = { ...patch }
+				delete backendPatch.avatarFile
+				if (avatarUrl) backendPatch.avatar = avatarUrl
 				if (backendPatch.phone === null) delete backendPatch.phone
 				const updated = await updateProfile(profile.id, backendPatch)
-				setProfile(p => (p ? { ...p, ...updated } : p))
+				setProfile(p =>
+					p
+						? {
+								...p,
+								...updated,
+								avatar: avatarUrl ?? updated.avatar ?? p.avatar,
+						  }
+						: p
+				)
 			} finally {
 				setSaving(false)
 			}
@@ -78,12 +122,34 @@ export function useProfile(userId: number) {
 	const addArticle = useCallback(
 		async (input: NewArticleInput) => {
 			if (!profile || !currentUser) return
-			setSaving(true)
+			const tempId = Date.now()
+			const currentUserName =
+				currentUser.full_name ||
+				`${currentUser.first_name} ${currentUser.last_name}`
+			const optimistic: any = {
+				id: tempId,
+				title: input.title,
+				abstract: input.abstract,
+				link: input.link,
+				authors: [{ id: currentUser.id, full_name: currentUserName }],
+				can_edit: true,
+			}
+			setProfile(p => (p ? { ...p, articles: [optimistic, ...p.articles] } : p))
 			try {
 				const art = await createArticle(currentUser.id, input)
-				setProfile(p => (p ? { ...p, articles: [art, ...p.articles] } : p))
-			} finally {
-				setSaving(false)
+				setProfile(p =>
+					p
+						? {
+								...p,
+								articles: p.articles.map(a => (a.id === tempId ? art : a)),
+						  }
+						: p
+				)
+			} catch (e) {
+				setProfile(p =>
+					p ? { ...p, articles: p.articles.filter(a => a.id !== tempId) } : p
+				)
+				throw e
 			}
 		},
 		[profile, currentUser]
@@ -187,14 +253,15 @@ export function useProfile(userId: number) {
 	const removeArticle = useCallback(
 		async (articleId: number) => {
 			if (!profile || !currentUser) return
-			setSaving(true)
+			const prev = profile.articles
+			setProfile(p =>
+				p ? { ...p, articles: p.articles.filter(a => a.id !== articleId) } : p
+			)
 			try {
 				await deleteArticle(articleId, currentUser.id)
-				setProfile(p =>
-					p ? { ...p, articles: p.articles.filter(a => a.id !== articleId) } : p
-				)
-			} finally {
-				setSaving(false)
+			} catch (e) {
+				setProfile(p => (p ? { ...p, articles: prev } : p))
+				throw e
 			}
 		},
 		[profile, currentUser]
@@ -203,63 +270,64 @@ export function useProfile(userId: number) {
 	const addMember = useCallback(
 		async (groupId: number, userId: number) => {
 			if (!profile) return
-			setSaving(true)
+			setProfile(p =>
+				p
+					? {
+							...p,
+							groups: p.groups.map(g =>
+								g.id === groupId
+									? {
+											...g,
+											members_count:
+												(g.members_count || 0) +
+												(g.members?.some(m => m.id === userId) ? 0 : 1),
+											members: g.members
+												? [
+														...g.members,
+														{ id: userId, full_name: 'user#' + userId },
+												  ]
+												: g.members,
+									  }
+									: g
+							),
+					  }
+					: p
+			)
 			try {
 				await addGroupMember(groupId, userId)
-				setProfile(p =>
-					p
-						? {
-								...p,
-								groups: p.groups.map(g =>
-									g.id === groupId
-										? {
-												...g,
-												members_count:
-													(g.members_count || 0) +
-													(g.members?.some(m => m.id === userId) ? 0 : 1),
-												members: g.members
-													? [
-															...g.members,
-															{ id: userId, full_name: 'user#' + userId },
-													  ]
-													: g.members,
-										  }
-										: g
-								),
-						  }
-						: p
-				)
-			} finally {
-				setSaving(false)
+			} catch (e) {
+				await load()
+				throw e
 			}
 		},
-		[profile]
+		[profile, load]
 	)
 
 	const removeMember = useCallback(
 		async (groupId: number, userId: number) => {
 			if (!profile) return
-			setSaving(true)
+			const snapshot = profile.groups
+			setProfile(p =>
+				p
+					? {
+							...p,
+							groups: p.groups.map(g =>
+								g.id === groupId
+									? {
+											...g,
+											members_count: (g.members_count || 0) - 1,
+											members: g.members?.filter(m => m.id !== userId),
+									  }
+									: g
+							),
+					  }
+					: p
+			)
 			try {
 				await removeGroupMember(groupId, userId)
-				setProfile(p =>
-					p
-						? {
-								...p,
-								groups: p.groups.map(g =>
-									g.id === groupId
-										? {
-												...g,
-												members_count: (g.members_count || 0) - 1,
-												members: g.members?.filter(m => m.id !== userId),
-										  }
-										: g
-								),
-						  }
-						: p
-				)
-			} finally {
-				setSaving(false)
+			} catch (e) {
+				setProfile(p => (p ? { ...p, groups: snapshot } : p))
+				throw e
 			}
 		},
 		[profile]
@@ -283,5 +351,8 @@ export function useProfile(userId: number) {
 		removeMember,
 		candidates,
 		refreshCandidates,
+		candidateQuery,
+		setCandidateQuery,
+		candidateLoading,
 	}
 }

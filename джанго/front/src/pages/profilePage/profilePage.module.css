@@ -1,8 +1,17 @@
+/* =============================
+   PROFILE PAGE LAYOUT (MODULE)
+   Стараемся выдержать стилистику сайта:
+   - Фон: #242424 (root) + слегка приподнятые карточки
+   - Полупрозрачные панели / мягкие границы
+   - Единая типографика и интервалы
+   ============================= */
+
 .profileWrapper {
 	display: grid;
-	gap: 1.5rem;
-	grid-template-columns: 280px 1fr;
+	grid-template-columns: 300px 1fr;
+	gap: 24px;
 	align-items: start;
+	margin-top: 8px;
 }
 .avatarBlock {
 	margin-bottom: 1rem;
@@ -17,8 +26,9 @@
 	height: 100%;
 	object-fit: cover;
 	border-radius: 50%;
-	border: 2px solid #1f2937;
+	border: 2px solid #334155;
 	background: #0f172a;
+	box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.5);
 }
 .avatarFallback {
 	width: 100%;
@@ -27,24 +37,28 @@
 	align-items: center;
 	justify-content: center;
 	border-radius: 50%;
-	font-size: 48px;
+	font-size: 42px;
 	font-weight: 600;
 	letter-spacing: 1px;
-	background: linear-gradient(135deg, #334155, #1e293b);
-	color: #e2e8f0;
-	border: 2px solid #1f2937;
+	background: linear-gradient(135deg, #1e293b, #334155 55%, #475569);
+	color: #f1f5f9;
+	border: 2px solid #334155;
+	text-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
 }
 .avatarEditBtn {
 	position: absolute;
 	inset: 0;
-	background: rgba(0, 0, 0, 0.45);
+	background: rgba(0, 0, 0, 0.55);
+	backdrop-filter: blur(2px);
 	color: #fff;
 	border: none;
 	border-radius: 50%;
 	opacity: 0;
-	font-size: 0.9rem;
+	font-size: 0.8rem;
+	letter-spacing: 0.05em;
+	font-weight: 500;
 	cursor: pointer;
-	transition: 0.25s;
+	transition: opacity 0.25s, background 0.25s;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -53,22 +67,46 @@
 	opacity: 1;
 }
 .avatarActions {
-	margin-top: 0.5rem;
+	margin-top: 0.75rem;
 	display: flex;
-	gap: 0.5rem;
+	gap: 8px;
 	flex-wrap: wrap;
 }
 .sidebar {
-	border: 1px solid #ddd;
-	padding: 1rem;
-	border-radius: 8px;
-	background: #fff;
+	border: 1px solid #30363d;
+	background: linear-gradient(
+		145deg,
+		rgba(30, 41, 59, 0.65),
+		rgba(15, 23, 42, 0.85)
+	);
+	padding: 20px 18px 22px;
+	border-radius: 16px;
+	box-shadow: 0 4px 14px -4px rgba(0, 0, 0, 0.55),
+		0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+	position: sticky;
+	top: 16px;
 }
+/* ВНИМАНИЕ: класс .main используется и как корневой <main>, и как секция справа.
+   Стили разделяем по контексту через вложенность. */
 .main {
-	border: 1px solid #ddd;
-	padding: 1rem;
-	border-radius: 8px;
-	background: #fff;
+	border: 1px solid #30363d;
+	background: linear-gradient(
+		145deg,
+		rgba(30, 41, 59, 0.55),
+		rgba(15, 23, 42, 0.75)
+	);
+	padding: 20px 18px 26px;
+	border-radius: 16px;
+	box-shadow: 0 4px 14px -4px rgba(0, 0, 0, 0.5),
+		0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+/* Корневой контейнер страницы */
+main.main {
+	background: transparent;
+	box-shadow: none;
+	border: none;
+	padding: 0 0 32px;
 }
 .header {
 	display: flex;
@@ -77,36 +115,56 @@
 	margin-bottom: 1rem;
 }
 .editBtn {
-	background: #2563eb;
+	--btn-bg: #2563eb;
+	--btn-bg-hov: #1d4ed8;
+	background: var(--btn-bg);
 	color: #fff;
-	border: none;
-	padding: 0.5rem 0.9rem;
-	border-radius: 6px;
+	border: 1px solid #1d4ed8;
+	padding: 8px 14px;
+	border-radius: 10px;
 	cursor: pointer;
-	font-size: 0.9rem;
+	font-size: 0.85rem;
+	font-weight: 500;
+	letter-spacing: 0.03em;
+	transition: background 0.22s, transform 0.15s;
 }
 .editBtn:hover {
-	background: #1d4ed8;
+	background: var(--btn-bg-hov);
+}
+.editBtn:active {
+	transform: translateY(1px);
 }
 .fieldGroup {
 	margin-bottom: 0.75rem;
 }
 .fieldGroup label {
-	font-size: 0.75rem;
+	font-size: 0.68rem;
 	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	color: #555;
+	letter-spacing: 0.08em;
+	font-weight: 600;
+	color: #94a3b8;
 	display: block;
-	margin-bottom: 0.25rem;
+	margin: 0 0 4px;
 }
 .fieldGroup input,
-.fieldGroup textarea {
+.fieldGroup textarea,
+.fieldGroup select {
 	width: 100%;
-	padding: 0.5rem;
-	border: 1px solid #ccc;
-	border-radius: 4px;
+	padding: 10px 12px;
+	border: 1px solid #334155;
+	border-radius: 10px;
 	font-family: inherit;
-	font-size: 0.9rem;
+	font-size: 0.82rem;
+	background: #1e293b;
+	color: #e2e8f0;
+	outline: none;
+	transition: border-color 0.25s, background 0.25s;
+}
+.fieldGroup input:focus,
+.fieldGroup textarea:focus,
+.fieldGroup select:focus {
+	border-color: #64748b;
+	background: #243248;
 }
 .fieldGroup textarea {
 	min-height: 80px;
@@ -116,10 +174,17 @@
 	margin-bottom: 2rem;
 }
 .section h3 {
-	margin: 0 0 0.75rem;
-	font-size: 1rem;
-	border-bottom: 1px solid #eee;
-	padding-bottom: 0.3rem;
+	margin: 0 0 12px;
+	font-size: 0.95rem;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	color: #f1f5f9;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.section h3 button {
+	margin-left: auto;
 }
 .articleList,
 .groupList {
@@ -131,10 +196,21 @@
 }
 .articleItem,
 .groupItem {
-	padding: 0.6rem 0.75rem;
-	border: 1px solid #e3e3e3;
-	border-radius: 6px;
-	background: #fafafa;
+	padding: 12px 14px 13px;
+	border: 1px solid #30363d;
+	border-radius: 14px;
+	background: linear-gradient(
+		145deg,
+		rgba(30, 41, 59, 0.55),
+		rgba(15, 23, 42, 0.85)
+	);
+	box-shadow: 0 2px 6px -2px rgba(0, 0, 0, 0.45);
+	transition: border-color 0.25s, transform 0.25s;
+}
+.articleItem:hover,
+.groupItem:hover {
+	border-color: #475569;
+	transform: translateY(-2px);
 }
 .inline {
 	display: flex;
@@ -147,32 +223,46 @@
 	margin-top: 0.5rem;
 }
 .badge {
-	background: #e0e7ff;
-	color: #1e3a8a;
-	padding: 0.2rem 0.5rem;
-	border-radius: 4px;
-	font-size: 0.65rem;
+	background: linear-gradient(135deg, #334155, #475569);
+	color: #f1f5f9;
+	padding: 3px 8px 4px;
+	border-radius: 999px;
+	font-size: 0.55rem;
 	text-transform: uppercase;
-	letter-spacing: 0.05em;
+	letter-spacing: 0.12em;
+	font-weight: 600;
 }
 .smallBtn {
-	background: #f1f5f9;
-	border: 1px solid #cbd5e1;
-	border-radius: 4px;
-	font-size: 0.7rem;
-	padding: 0.25rem 0.5rem;
+	--btn-bg: #1e293b;
+	--btn-bg-hov: #243248;
+	background: var(--btn-bg);
+	border: 1px solid #334155;
+	border-radius: 10px;
+	font-size: 0.65rem;
+	padding: 6px 10px 7px;
 	cursor: pointer;
+	color: #e2e8f0;
+	font-weight: 500;
+	letter-spacing: 0.05em;
+	transition: background 0.25s, border-color 0.25s, transform 0.15s;
 }
 .smallBtn:hover {
-	background: #e2e8f0;
+	background: var(--btn-bg-hov);
+	border-color: #475569;
+}
+.smallBtn:active {
+	transform: translateY(1px);
 }
 .danger {
-	background: #fee2e2;
-	border-color: #fecaca;
-	color: #b91c1c;
+	--btn-bg: #3b0d0d;
+	--btn-bg-hov: #520f0f;
+	background: var(--btn-bg);
+	border-color: #7f1d1d;
+	color: #fca5a5;
 }
 .danger:hover {
-	background: #fecaca;
+	background: var(--btn-bg-hov);
+	border-color: #dc2626;
 }
 .formRow {
 	display: flex;
@@ -182,79 +272,112 @@
 .modalBackdrop {
 	position: fixed;
 	inset: 0;
-	background: rgba(0, 0, 0, 0.4);
+	background: rgba(0, 0, 0, 0.55);
+	backdrop-filter: blur(3px) saturate(120%);
 	display: flex;
 	justify-content: center;
 	align-items: flex-start;
-	padding-top: 10vh;
+	padding-top: 8vh;
+	z-index: 60;
 }
 .modal {
-	background: #fff;
-	padding: 1rem;
-	border-radius: 8px;
-	width: 420px;
-	max-width: 100%;
-	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+	background: linear-gradient(
+		155deg,
+		rgba(30, 41, 59, 0.85),
+		rgba(15, 23, 42, 0.95)
+	);
+	border: 1px solid #334155;
+	padding: 22px 22px 26px;
+	border-radius: 20px;
+	width: 480px;
+	max-width: calc(100% - 24px);
+	box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.65),
+		0 0 0 1px rgba(255, 255, 255, 0.03) inset;
 	position: relative;
+	color: #e2e8f0;
 }
 .modal h4 {
-	margin: 0 0 0.75rem;
+	margin: 0 0 14px;
+	font-size: 0.95rem;
+	letter-spacing: 0.05em;
+	font-weight: 600;
 }
 .closeBtn {
 	position: absolute;
-	top: 0.4rem;
-	right: 0.6rem;
-	background: transparent;
-	border: none;
-	font-size: 1.2rem;
+	top: 10px;
+	right: 12px;
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid #334155;
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
+	font-size: 1.1rem;
+	line-height: 1;
 	cursor: pointer;
+	color: #e2e8f0;
+	transition: background 0.25s, border-color 0.25s;
+}
+.closeBtn:hover {
+	background: rgba(255, 255, 255, 0.09);
+	border-color: #475569;
 }
 .divider {
 	height: 1px;
-	background: #eee;
-	margin: 1rem 0;
+	background: linear-gradient(90deg, transparent, #334155, transparent);
+	margin: 18px 0 20px;
 }
 .helper {
-	font-size: 0.65rem;
-	color: #666;
-	margin-top: 0.2rem;
+	font-size: 0.6rem;
+	color: #94a3b8;
+	margin-top: 4px;
+	letter-spacing: 0.05em;
 }
 .selectMulti {
 	width: 100%;
-	min-height: 75px;
+	min-height: 90px;
+	background: #1e293b;
 }
 .saving {
 	opacity: 0.6;
 	pointer-events: none;
 }
 .error {
-	color: #b91c1c;
-	font-size: 0.8rem;
-	margin-top: 0.25rem;
+	color: #fca5a5;
+	font-size: 0.72rem;
+	margin-top: 4px;
 }
 .success {
-	color: #15803d;
-	font-size: 0.8rem;
-	margin-top: 0.25rem;
+	color: #4ade80;
+	font-size: 0.72rem;
+	margin-top: 4px;
 }
-@media (max-width: 900px) {
+@media (max-width: 1040px) {
 	.profileWrapper {
 		grid-template-columns: 1fr;
 	}
-}
-.main {
-	max-width: 1200px;
-	margin: 16px auto 32px;
-	padding: 0 16px;
-	color: #e5e7eb;
+	.sidebar {
+		position: static;
+	}
 }
 
+/* Корневой main контейнер наследует ширину от глобальных стилей */
+.main {
+	max-width: 100%;
+	color: #e2e8f0;
+}
+
+/* Доп. карточка (если будет нужна повторно) */
 .headerCard {
-	border: 1px solid #1f2937;
-	border-radius: 12px;
-	background: rgba(148, 163, 184, 0.06);
-	padding: 14px;
-	margin-bottom: 16px;
+	border: 1px solid #30363d;
+	border-radius: 16px;
+	background: linear-gradient(
+		145deg,
+		rgba(30, 41, 59, 0.55),
+		rgba(15, 23, 42, 0.8)
+	);
+	padding: 16px 18px 18px;
+	margin-bottom: 20px;
+	box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.5);
 }
 
 .headerTop {
@@ -266,8 +389,10 @@
 
 .title {
 	margin: 0;
-	font-size: 22px;
-	color: #fff;
+	font-size: 1.25rem;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	color: #ffffff;
 }
 
 .meta {
@@ -278,27 +403,116 @@
 }
 
 .muted {
-	color: #94a3b8;
+	color: #64748b;
 }
 
 .backBtn {
-	padding: 8px 12px;
-	border-radius: 10px;
-	border: 1px solid #1f2937;
-	background: rgba(148, 163, 184, 0.08);
-	color: #e5e7eb;
+	padding: 8px 14px 9px;
+	border-radius: 12px;
+	border: 1px solid #334155;
+	background: #1e293b;
+	color: #e2e8f0;
 	cursor: pointer;
+	font-size: 0.7rem;
+	letter-spacing: 0.06em;
+	font-weight: 500;
+	transition: background 0.25s, border-color 0.25s, transform 0.15s;
 }
 .backBtn:hover {
-	background: rgba(148, 163, 184, 0.12);
+	background: #243248;
+	border-color: #475569;
+}
+.backBtn:active {
+	transform: translateY(1px);
 }
 
 .notFound {
-	border: 1px dashed #1f2937;
-	border-radius: 12px;
-	padding: 16px;
-	color: #94a3b8;
+	border: 1px dashed #334155;
+	border-radius: 16px;
+	padding: 18px 20px;
+	color: #64748b;
 	display: flex;
 	align-items: center;
 	gap: 12px;
+	background: rgba(30, 41, 59, 0.35);
+}
+
+/* Списки в модалке добавления участников */
+.simpleList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+.simpleList li {
+	justify-content: space-between;
+	border: 1px solid #334155;
+	padding: 8px 10px 9px;
+	border-radius: 10px;
+	background: #1e293b;
+	display: flex;
+	align-items: center;
+	font-size: 0.7rem;
+}
+.simpleList li span {
+	color: #e2e8f0;
+}
+
+/* Scroll improvements inside modals if content large */
+.modal {
+	max-height: calc(100vh - 120px);
+	overflow-y: auto;
+}
+
+/* Light theme (respect prefers-color-scheme) */
+@media (prefers-color-scheme: light) {
+	.sidebar {
+		background: linear-gradient(
+			145deg,
+			rgba(241, 245, 249, 0.85),
+			rgba(226, 232, 240, 0.9)
+		);
+		border-color: #cbd5e1;
+	}
+	.main:not(main.main) {
+		background: linear-gradient(145deg, #f1f5f9, #e2e8f0);
+		border-color: #cbd5e1;
+	}
+	.articleItem,
+	.groupItem {
+		background: linear-gradient(145deg, #f1f5f9, #e2e8f0);
+		border-color: #cbd5e1;
+	}
+	.modal {
+		background: #ffffff;
+		border-color: #cbd5e1;
+		color: #1e293b;
+	}
+	.fieldGroup input,
+	.fieldGroup textarea,
+	.fieldGroup select {
+		background: #ffffff;
+		border-color: #cbd5e1;
+		color: #1e293b;
+	}
+	.smallBtn {
+		background: #f1f5f9;
+		color: #1e293b;
+	}
+	.smallBtn:hover {
+		background: #e2e8f0;
+	}
+	.badge {
+		background: linear-gradient(135deg, #64748b, #475569);
+	}
+	.danger {
+		background: #fee2e2;
+		color: #991b1b;
+		border-color: #fecaca;
+	}
+	.danger:hover {
+		background: #fecaca;
+	}
 }

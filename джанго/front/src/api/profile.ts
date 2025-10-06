@@ -1,7 +1,7 @@
+// Profile API facade with mock + HTTP branching.
 import type { UserPublic } from '../types/auth'
 import type {
 	GroupDetail,
-	GroupMemberDetail,
 	GroupProject,
 	NewGroupArticleInput,
 	NewGroupProjectInput,
@@ -9,7 +9,6 @@ import type {
 	UpdateGroupProjectInput,
 } from '../types/group'
 import type {
-	GroupMember,
 	NewArticleInput,
 	NewGroupInput,
 	ProfileArticle,
@@ -17,189 +16,37 @@ import type {
 	ProfileGroup,
 	UpdateArticleInput,
 } from '../types/profile'
-import { getAccessToken } from './http'
+import { adaptArticle, adaptGroupDetail, adaptProfileDetail } from './adapters'
+import { API_USE_MOCK } from './config'
+import { http } from './http'
+import {
+	allocArticleId,
+	allocGroupId,
+	allocProjectId,
+	articles,
+	buildGroupDetail,
+	buildMembersArray,
+	computeArticlesForUser,
+	computeGroupsForUser,
+	delay,
+	groupArticles,
+	groupMembers,
+	groupProjects,
+	groups,
+	users,
+	type MockUser,
+} from './profile.mockState'
 
-// In-memory mock state (replace with real API later)
-// Added optional avatar property (data URL) to user objects for mock purposes.
-interface MockUser extends UserPublic {
-	avatar?: string
-}
-
-let users: MockUser[] = [
-	{
-		id: 1,
-		first_name: 'Иван',
-		last_name: 'Иванов',
-		email: 'ivan@example.com',
-		full_name: 'Иван Иванов',
-		phone: '+79990000001',
-		avatar: undefined,
-	},
-	{
-		id: 2,
-		first_name: 'Пётр',
-		last_name: 'Петров',
-		email: 'petr@example.com',
-		full_name: 'Пётр Петров',
-		phone: '+79990000002',
-		avatar: undefined,
-	},
-	{
-		id: 3,
-		first_name: 'Анна',
-		last_name: 'Сидорова',
-		email: 'anna@example.com',
-		full_name: 'Анна Сидорова',
-		phone: '+79990000003',
-		avatar: undefined,
-	},
-]
-
-let articles: ProfileArticle[] = [
-	{
-		id: 1,
-		title: 'Исследование алгоритмов',
-		authors: [
-			{ id: 1, full_name: 'Иван Иванов' },
-			{ id: 2, full_name: 'Пётр Петров' },
-		],
-	},
-	{
-		id: 2,
-		title: 'Применение ИИ',
-		authors: [{ id: 2, full_name: 'Пётр Петров' }],
-	},
-]
-let nextArticleId = 3
-
-let groups: ProfileGroup[] = [
-	{
-		id: 1,
-		name: 'Группа Алгоритмов',
-		description: 'Алг. и структуры',
-		members_count: 2,
-		leader_id: 1,
-		leader_name: 'Иван Иванов',
-	},
-	{
-		id: 2,
-		name: 'Группа ИИ',
-		description: 'ML & AI',
-		members_count: 3,
-		leader_id: 2,
-		leader_name: 'Пётр Петров',
-	},
-]
-let nextGroupId = 3
-
-// group membership: map group -> member ids, first one is leader
-let groupMembers: Record<number, number[]> = {
-	1: [1, 2],
-	2: [2, 1, 3],
-}
-
-// Group articles (per group) store only article ids referencing global articles for simplicity.
-// For group-only articles we will create separate entries (still in articles array) flagged by group mapping.
-let groupArticles: Record<number, number[]> = {
-	1: [1], // group 1 includes article 1
-	2: [2],
-}
-
-// Simple in-memory projects storage
-let groupProjects: Record<number, GroupProject[]> = {
-	1: [
-		{
-			id: 1,
-			title: 'Система анализа данных',
-			status: 'in_progress',
-			start_date: '2025-01-10',
-			supervisor_id: 1,
-			supervisor_name: 'Иван Иванов',
-			can_edit: true,
-		},
-	],
-	2: [],
-}
-let nextProjectId = 2
-
-function buildMembersArray(groupId: number): GroupMember[] {
-	const memberIds = groupMembers[groupId] || []
-	return memberIds.map((id, idx) => {
-		const u = users.find(u => u.id === id)
-		return {
-			id,
-			full_name: u?.full_name || `user#${id}`,
-			is_leader: idx === 0,
-		}
-	})
-}
-
-function computeGroupsForUser(userId: number): ProfileGroup[] {
-	const res: ProfileGroup[] = []
-	for (const g of groups) {
-		const members = groupMembers[g.id] || []
-		if (members.includes(userId)) {
-			const leader = members[0]
-			res.push({
-				...g,
-				role: leader === userId ? 'Руководитель' : 'Участник',
-				is_leader: leader === userId,
-				members_count: members.length,
-				leader_id: g.leader_id ?? leader,
-				leader_name:
-					g.leader_name || users.find(u => u.id === leader)?.full_name || '—',
-				can_manage: leader === userId,
-				members: buildMembersArray(g.id),
-			})
-		}
-	}
-	return res
-}
-
-function buildGroupDetail(
-	groupId: number,
-	currentUserId: number
-): GroupDetail | null {
-	const base = groups.find(g => g.id === groupId)
-	if (!base) return null
-	const membersIds = groupMembers[groupId] || []
-	const leader = membersIds[0]
-	const members: GroupMemberDetail[] = buildMembersArray(groupId).map(m => ({
-		id: m.id,
-		full_name: m.full_name,
-		is_leader: m.is_leader,
-	}))
-	const articlesForGroup: ProfileArticle[] = (groupArticles[groupId] || [])
-		.map(aid => articles.find(a => a.id === aid))
-		.filter(Boolean)
-		.map(a => ({
-			...a!,
-			can_edit: a!.authors.some(au => au.id === currentUserId),
-		}))
-	const projects: GroupProject[] = (groupProjects[groupId] || []).map(p => ({
-		...p,
-		can_edit: leader === currentUserId,
-	}))
-	return {
-		id: base.id,
-		name: base.name,
-		description: base.description,
-		leader_id: base.leader_id ?? leader,
-		leader_name: base.leader_name,
-		members,
-		articles: articlesForGroup,
-		projects,
-		members_count: membersIds.length,
-		can_manage: leader === currentUserId,
-		is_member: membersIds.includes(currentUserId),
-		is_leader: leader === currentUserId,
-	}
-}
+// (Mock state definitions moved to profile.mockState.ts)
 
 export async function getGroupDetail(
 	groupId: number,
 	currentUserId: number
 ): Promise<GroupDetail | null> {
+	if (!API_USE_MOCK) {
+		const data = await http<any>(`/groups/${groupId}/detail/`, { auth: true })
+		return adaptGroupDetail(data)
+	}
 	await delay()
 	return buildGroupDetail(groupId, currentUserId)
 }
@@ -209,6 +56,14 @@ export async function addGroupArticle(
 	currentUserId: number,
 	input: NewGroupArticleInput
 ): Promise<ProfileArticle> {
+	if (!API_USE_MOCK) {
+		const raw = await http<any>(`/groups/${groupId}/articles/`, {
+			method: 'POST',
+			auth: true,
+			body: JSON.stringify({ ...input }),
+		})
+		return adaptArticle(raw)
+	}
 	await delay()
 	const art = await createArticle(currentUserId, input)
 	groupArticles[groupId] = groupArticles[groupId] || []
@@ -222,6 +77,14 @@ export async function updateGroupArticle(
 	currentUserId: number,
 	patch: UpdateGroupArticleInput
 ): Promise<ProfileArticle> {
+	if (!API_USE_MOCK) {
+		const raw = await http<any>(`/groups/${groupId}/articles/${articleId}/`, {
+			method: 'PATCH',
+			auth: true,
+			body: JSON.stringify(patch),
+		})
+		return adaptArticle(raw)
+	}
 	await delay()
 	// Ensure user is member of the group for editing context (light check)
 	const members = groupMembers[groupId] || []
@@ -235,6 +98,13 @@ export async function deleteGroupArticle(
 	articleId: number,
 	currentUserId: number
 ): Promise<void> {
+	if (!API_USE_MOCK) {
+		await http<void>(`/groups/${groupId}/articles/${articleId}/`, {
+			method: 'DELETE',
+			auth: true,
+		})
+		return
+	}
 	await delay()
 	await deleteArticle(articleId, currentUserId)
 	groupArticles[groupId] = (groupArticles[groupId] || []).filter(
@@ -247,11 +117,18 @@ export async function createGroupProject(
 	currentUserId: number,
 	input: NewGroupProjectInput
 ): Promise<GroupProject> {
+	if (!API_USE_MOCK) {
+		return http<GroupProject>(`/groups/${groupId}/projects/`, {
+			method: 'POST',
+			auth: true,
+			body: JSON.stringify(input),
+		})
+	}
 	await delay()
 	const leader = groupMembers[groupId]?.[0]
 	if (leader !== currentUserId) throw new Error('Нет прав')
 	const project: GroupProject = {
-		id: nextProjectId++,
+		id: allocProjectId(),
 		title: input.title.trim(),
 		description: input.description?.trim() || undefined,
 		status: input.status || 'planned',
@@ -272,6 +149,13 @@ export async function updateGroupProject(
 	currentUserId: number,
 	patch: UpdateGroupProjectInput
 ): Promise<GroupProject> {
+	if (!API_USE_MOCK) {
+		return http<GroupProject>(`/groups/${groupId}/projects/${projectId}/`, {
+			method: 'PATCH',
+			auth: true,
+			body: JSON.stringify(patch),
+		})
+	}
 	await delay()
 	const arr = groupProjects[groupId] || []
 	const idx = arr.findIndex(p => p.id === projectId)
@@ -292,6 +176,13 @@ export async function deleteGroupProject(
 	projectId: number,
 	currentUserId: number
 ): Promise<void> {
+	if (!API_USE_MOCK) {
+		await http<void>(`/groups/${groupId}/projects/${projectId}/`, {
+			method: 'DELETE',
+			auth: true,
+		})
+		return
+	}
 	await delay()
 	const leader = groupMembers[groupId]?.[0]
 	if (leader !== currentUserId) throw new Error('Нет прав')
@@ -300,19 +191,16 @@ export async function deleteGroupProject(
 	)
 }
 
-function computeArticlesForUser(userId: number): ProfileArticle[] {
-	return articles
-		.filter(a => a.authors.some(au => au.id === userId))
-		.map(a => ({
-			...a,
-			can_edit: a.authors.some(au => au.id === userId),
-		}))
-}
-
 export async function getProfileDetail(
 	targetUserId: number,
 	currentUserId: number
 ): Promise<ProfileDetail | null> {
+	if (!API_USE_MOCK) {
+		const raw = await http<any>(`/users/${targetUserId}/profile/`, {
+			auth: true,
+		})
+		return adaptProfileDetail(raw)
+	}
 	await delay()
 	const u = users.find(u => u.id === targetUserId)
 	if (!u) return null
@@ -340,6 +228,13 @@ export async function updateProfile(
 		}
 	>
 ): Promise<MockUser> {
+	if (!API_USE_MOCK) {
+		return http<MockUser>(`/users/${userId}/`, {
+			method: 'PATCH',
+			auth: true,
+			body: JSON.stringify(patch),
+		})
+	}
 	await delay()
 	const idx = users.findIndex(u => u.id === userId)
 	if (idx === -1) throw new Error('User not found')
@@ -351,6 +246,13 @@ export async function createArticle(
 	currentUserId: number,
 	input: NewArticleInput
 ): Promise<ProfileArticle> {
+	if (!API_USE_MOCK) {
+		return http<ProfileArticle>('/articles/', {
+			method: 'POST',
+			body: JSON.stringify({ ...input }),
+			auth: true,
+		})
+	}
 	await delay()
 	if (!input.title.trim()) throw new Error('Название обязательно')
 	const authorIds = Array.from(new Set([currentUserId, ...input.co_author_ids]))
@@ -359,7 +261,7 @@ export async function createArticle(
 		return { id, full_name: u?.full_name || `user#${id}` }
 	})
 	const art: ProfileArticle = {
-		id: nextArticleId++,
+		id: allocArticleId(),
 		title: input.title.trim(),
 		abstract: input.abstract?.trim() || undefined,
 		link: input.link?.trim() || undefined,
@@ -374,6 +276,13 @@ export async function updateArticle(
 	currentUserId: number,
 	patch: UpdateArticleInput
 ): Promise<ProfileArticle> {
+	if (!API_USE_MOCK) {
+		return http<ProfileArticle>(`/articles/${articleId}/`, {
+			method: 'PATCH',
+			body: JSON.stringify(patch),
+			auth: true,
+		})
+	}
 	await delay()
 	const idx = articles.findIndex(a => a.id === articleId)
 	if (idx === -1) throw new Error('Article not found')
@@ -397,6 +306,13 @@ export async function updateArticle(
 }
 
 export async function deleteArticle(articleId: number, currentUserId: number) {
+	if (!API_USE_MOCK) {
+		await http<void>(`/articles/${articleId}/`, {
+			method: 'DELETE',
+			auth: true,
+		})
+		return
+	}
 	await delay()
 	const idx = articles.findIndex(a => a.id === articleId)
 	if (idx === -1) return
@@ -410,10 +326,17 @@ export async function createGroup(
 	currentUserId: number,
 	input: NewGroupInput
 ): Promise<ProfileGroup> {
+	if (!API_USE_MOCK) {
+		return http<ProfileGroup>('/groups/', {
+			method: 'POST',
+			body: JSON.stringify(input),
+			auth: true,
+		})
+	}
 	await delay()
 	if (!input.name.trim()) throw new Error('Название группы обязательно')
 	const g: ProfileGroup = {
-		id: nextGroupId++,
+		id: allocGroupId(),
 		name: input.name.trim(),
 		description: input.description?.trim(),
 		members_count: 1,
@@ -437,6 +360,13 @@ export async function leaveGroup(
 	currentUserId: number,
 	groupId: number
 ): Promise<void> {
+	if (!API_USE_MOCK) {
+		await http<void>(`/groups/${groupId}/leave/`, {
+			method: 'POST',
+			auth: true,
+		})
+		return
+	}
 	await delay()
 	const members = groupMembers[groupId]
 	if (!members) return
@@ -444,7 +374,8 @@ export async function leaveGroup(
 	// If leader left, assign new leader (first remaining) or delete group
 	if (members[0] === currentUserId) {
 		if (groupMembers[groupId].length === 0) {
-			groups = groups.filter(g => g.id !== groupId)
+			const idx = groups.findIndex(g => g.id === groupId)
+			if (idx !== -1) groups.splice(idx, 1)
 			delete groupMembers[groupId]
 		}
 	}
@@ -454,6 +385,13 @@ export async function updateGroup(
 	groupId: number,
 	patch: Partial<{ name: string; description: string; leader_id: number }>
 ): Promise<ProfileGroup> {
+	if (!API_USE_MOCK) {
+		return http<ProfileGroup>(`/groups/${groupId}/`, {
+			method: 'PATCH',
+			body: JSON.stringify(patch),
+			auth: true,
+		})
+	}
 	await delay()
 	const idx = groups.findIndex(g => g.id === groupId)
 	if (idx === -1) throw new Error('Group not found')
@@ -491,12 +429,25 @@ export async function updateGroup(
 }
 
 export async function deleteGroup(groupId: number): Promise<void> {
+	if (!API_USE_MOCK) {
+		await http<void>(`/groups/${groupId}/`, { method: 'DELETE', auth: true })
+		return
+	}
 	await delay()
-	groups = groups.filter(g => g.id !== groupId)
+	const idx = groups.findIndex(g => g.id === groupId)
+	if (idx !== -1) groups.splice(idx, 1)
 	delete groupMembers[groupId]
 }
 
 export async function addGroupMember(groupId: number, userId: number) {
+	if (!API_USE_MOCK) {
+		await http(`/groups/${groupId}/add_member/`, {
+			method: 'POST',
+			body: JSON.stringify({ user_id: userId }),
+			auth: true,
+		})
+		return
+	}
 	await delay()
 	const members = groupMembers[groupId]
 	if (!members) throw new Error('Group not found')
@@ -504,6 +455,14 @@ export async function addGroupMember(groupId: number, userId: number) {
 }
 
 export async function removeGroupMember(groupId: number, userId: number) {
+	if (!API_USE_MOCK) {
+		await http(`/groups/${groupId}/remove_member/`, {
+			method: 'POST',
+			body: JSON.stringify({ user_id: userId }),
+			auth: true,
+		})
+		return
+	}
 	await delay()
 	const members = groupMembers[groupId]
 	if (!members) throw new Error('Group not found')
@@ -515,12 +474,46 @@ export async function removeGroupMember(groupId: number, userId: number) {
 export async function listCoAuthorCandidates(
 	excludeIds: number[]
 ): Promise<UserPublic[]> {
+	if (!API_USE_MOCK) {
+		// GET /users/?exclude=1,2   (или /users/?search=... в реальности)
+		const qs = excludeIds.length
+			? `?exclude=${encodeURIComponent(excludeIds.join(','))}`
+			: ''
+		return http<UserPublic[]>(`/users/${qs}`, { auth: true })
+	}
 	await delay()
 	return users.filter(u => !excludeIds.includes(u.id))
 }
 
-function delay(ms = 250) {
-	return new Promise(r => setTimeout(r, ms))
+// delay moved to mockState; kept import-based.
+
+// Avatar upload (multipart) for HTTP mode; mock just inlines base64 string
+export async function uploadAvatar(
+	userId: number,
+	file: File
+): Promise<string> {
+	if (!API_USE_MOCK) {
+		const fd = new FormData()
+		fd.append('avatar', file)
+		const raw = await fetch(`/api/users/${userId}/`, {
+			method: 'PATCH',
+			body: fd,
+			headers: {},
+		})
+		if (!raw.ok) throw new Error('Upload failed')
+		const data = await raw.json()
+		return data.avatar
+	}
+	// Mock: convert to data URL
+	const dataUrl = await new Promise<string>((resolve, reject) => {
+		const reader = new FileReader()
+		reader.onerror = () => reject(new Error('File read error'))
+		reader.onload = () => resolve(reader.result as string)
+		reader.readAsDataURL(file)
+	})
+	const u = users.find(u => u.id === userId)
+	if (u) u.avatar = dataUrl
+	return dataUrl
 }
 
 // Backend examples:
@@ -545,4 +538,4 @@ function delay(ms = 250) {
 // updateGroupProject -> PATCH /groups/{id}/projects/{project_id}/
 // deleteGroupProject -> DELETE /groups/{id}/projects/{project_id}/
 
-void getAccessToken // placeholder for future auth header usage
+// end

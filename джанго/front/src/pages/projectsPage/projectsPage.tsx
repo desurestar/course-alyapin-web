@@ -1,11 +1,12 @@
 import type { FC } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { List } from '../../components/list/list'
-import { projects } from '../../mocks/progect.mocks'
+import { useProjects } from '../../hooks/useProjects'
 import styles from './projectsPage.module.css'
 
 export const ProjectsPage: FC = () => {
 	const navigate = useNavigate()
+	const { projects, loading, error } = useProjects()
 	return (
 		<main className={styles.main}>
 			<div className={styles.header}>
@@ -15,11 +16,20 @@ export const ProjectsPage: FC = () => {
 				</button>
 			</div>
 
+			{error && (
+				<div style={{ color: '#ef4444', marginBottom: 12 }}>
+					Ошибка: {error}
+				</div>
+			)}
 			<List
 				variant='projects'
-				items={projects}
+				items={projects as any}
+				loading={loading}
 				emptyText='Проектов пока нет'
-				onItemClick={p => console.log('Открыть проект:', (p as any).id)}
+				onItemClick={p => {
+					const groupId = (p as any).group_id ?? (p as any).teamId
+					if (groupId) navigate(`/groups/${groupId}`)
+				}}
 			/>
 		</main>
 	)
