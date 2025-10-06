@@ -7,7 +7,6 @@ export interface AuthUser {
 	email: string | null
 	phone?: string | null
 	full_name?: string
-	is_admin?: boolean
 	is_staff?: boolean
 	is_superuser?: boolean
 }
@@ -103,8 +102,10 @@ function enrichUser(u: AuthUser): AuthUser {
 		const parts = [u.last_name, u.first_name].filter(Boolean)
 		u.full_name = parts.join(' ')
 	}
-	if (u.is_admin == null) {
-		u.is_admin = !!(u as any).is_admin || !!u.is_staff || !!u.is_superuser
+	// Backward compatibility: if backend still sends is_admin, prefer is_superuser for logic elsewhere.
+	if ((u as any).is_admin && !u.is_superuser) {
+		// do not create is_admin on object; calling code migrated to is_superuser
+		u.is_superuser = true
 	}
 	return u
 }

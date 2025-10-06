@@ -73,6 +73,15 @@ export const Header: React.FC<HeaderProps> = ({
 					</nav>
 
 					<div className={styles.headerActions}>
+						{user?.is_superuser && (
+							<button
+								type='button'
+								className={`${styles.iconBtn} ${styles.adminBtn}`}
+								onClick={() => navigate('/admin')}
+							>
+								<span style={{ padding: '0 8px' }}>Панель администратора</span>
+							</button>
+						)}
 						{showSearch && (
 							<form
 								className={styles.searchForm}

@@ -11,7 +11,7 @@ import {
 	socialLinks,
 	universityName,
 } from './mocks/footer.mocks'
-import { logoUrl, navItems } from './mocks/header.mocks'
+import { logoUrl } from './mocks/header.mocks'
 import { AdminDepartmentPage } from './pages/adminDepartmentPage/adminDepartmentPage'
 import { AdminGroupPage } from './pages/adminGropPage/adminGroupPage'
 import { AdminMainPage } from './pages/adminMainPage/adminMainPage'
@@ -33,12 +33,9 @@ function AppShell() {
 		<>
 			{loggedIn && (
 				<Header
-					departmentName={departmentName}
 					universityName={universityName}
 					logoUrl={logoUrl}
-					navItems={navItems}
 					showSearch
-					onNavItemClick={path => console.log('Перейти:', path)}
 					onSearch={q => console.log('Поиск:', q)}
 				/>
 			)}
@@ -156,7 +153,7 @@ function AppShell() {
 						path='*'
 						element={
 							<Navigate
-								to={loggedIn ? (user?.is_admin ? '/admin' : '/') : '/login'}
+								to={loggedIn ? (user?.is_superuser ? '/admin' : '/') : '/login'}
 								replace
 							/>
 						}

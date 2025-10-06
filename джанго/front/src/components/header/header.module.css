@@ -149,6 +149,18 @@
 	color: #fecaca;
 }
 
+/* Admin panel button (textual) */
+.adminBtn {
+	width: auto;
+	padding: 0 14px;
+	font-size: 12px;
+	font-weight: 500;
+	letter-spacing: 0.03em;
+}
+.adminBtn:hover {
+	color: #38bdf8;
+}
+
 /* Бургер */
 .mobileToggle {
 	width: 40px;
