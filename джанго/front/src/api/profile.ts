@@ -294,6 +294,38 @@ export async function removeGroupMember(groupId: number, userId: number) {
 	return removeGroupMemberApi(groupId, userId)
 }
 
+// ------------------- AVATAR UPLOAD ------------------- //
+// Front-ready abstraction: in HTTP mode sends multipart PATCH to /users/{id}/
+// In mock mode stores base64 data URL in mock user record.
+export async function uploadAvatar(
+	userId: number,
+	file: File
+): Promise<string> {
+	if (USE_MOCK) {
+		const m = await ensureMock()
+		const toDataUrl = (f: File) =>
+			new Promise<string>((resolve, reject) => {
+				const reader = new FileReader()
+				reader.onerror = () => reject(new Error('File read error'))
+				reader.onload = () => resolve(reader.result as string)
+				reader.readAsDataURL(f)
+			})
+		const dataUrl = await toDataUrl(file)
+		const idx = m.users.findIndex((u: any) => u.id === userId)
+		if (idx !== -1) m.users[idx].avatar = dataUrl
+		return dataUrl
+	}
+	const fd = new FormData()
+	fd.append('avatar', file)
+	const resp = await fetch(`/api/users/${userId}/`, {
+		method: 'PATCH',
+		body: fd,
+	})
+	if (!resp.ok) throw new Error('Не удалось загрузить аватар')
+	const json = await resp.json()
+	return json.avatar
+}
+
 // ------------------- NOTES ------------------- //
 // Когда реальный бек будет готов:
 // 1. Поменять API_USE_MOCK = false (или читать из env VITE_API_USE_MOCK)
