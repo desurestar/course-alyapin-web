@@ -1,14 +1,12 @@
-from rest_framework import viewsets, mixins, status
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
-from .models import Department, DepartmentInfo, ResearchGroup, ResearchGroupMembership
-from .serializers import (
-    DepartmentSerializer, DepartmentDetailSerializer, DepartmentInfoUpsertSerializer,
-    ResearchGroupSerializer, ResearchGroupDetailSerializer,
-    ResearchGroupMembershipSerializer
-)
+from rest_framework.response import Response
+
+from .models import Department, ResearchGroup, ResearchGroupMembership
 from .permissions import ReadOnlyOrAdmin
+from .serializers import DepartmentDetailSerializer, DepartmentInfoUpsertSerializer, DepartmentSerializer, ResearchGroupDetailSerializer, ResearchGroupMembershipSerializer, ResearchGroupSerializer
+
 
 class DepartmentViewSet(viewsets.ModelViewSet):
     queryset = Department.objects.all().select_related('head')

@@ -1,0 +1,12 @@
+[tool.ruff]
+line-length = 300
+fix = true
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "Q"]
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "single"
+multiline-quotes = "single"
+docstring-quotes = "single"
+avoid-escape = true

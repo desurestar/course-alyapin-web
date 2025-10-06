@@ -1,5 +1,7 @@
 from django.contrib import admin
+
 from .models import Department, DepartmentInfo, ResearchGroup, ResearchGroupMembership
+
 
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):

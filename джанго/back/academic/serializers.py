@@ -1,9 +1,7 @@
-from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import (
-    Department, DepartmentInfo,
-    ResearchGroup, ResearchGroupMembership
-)
+from rest_framework import serializers
+
+from .models import Department, DepartmentInfo, ResearchGroup, ResearchGroupMembership
 
 User = get_user_model()
 

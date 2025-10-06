@@ -1,5 +1,5 @@
-from django.db import models
 from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
 
@@ -39,7 +39,7 @@ class DepartmentInfo(TimeStamped):
     contacts = models.TextField(blank=True)  # можно хранить форматированный текст/JSON
 
     def __str__(self):
-        return f"Info for {self.department.name}"
+        return f'Info for {self.department.name}'
 
 class ResearchGroup(TimeStamped):
     department = models.ForeignKey(
@@ -79,4 +79,4 @@ class ResearchGroupMembership(TimeStamped):
         indexes = [models.Index(fields=['group', 'user'])]
 
     def __str__(self):
-        return f"{self.user} -> {self.group} ({self.role})"
+        return f'{self.user} -> {self.group} ({self.role})'
