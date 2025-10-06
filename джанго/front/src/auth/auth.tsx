@@ -175,3 +175,12 @@ export function RequireAuth({ children }: { children: ReactElement }) {
 		return <Navigate to='/login' replace state={{ from: location }} />
 	return children
 }
+
+export function RequireAdmin({ children }: { children: ReactElement }) {
+	const { user, loading } = useAuth()
+	const location = useLocation()
+	if (loading) return null
+	if (!user || !user.is_admin)
+		return <Navigate to='/' replace state={{ from: location }} />
+	return children
+}

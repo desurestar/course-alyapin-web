@@ -5,6 +5,7 @@ export interface UserPublic {
 	email: string | null
 	phone?: string | null
 	full_name?: string
+	is_admin?: boolean
 }
 
 export interface AuthTokens {

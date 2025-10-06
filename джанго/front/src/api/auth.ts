@@ -7,6 +7,9 @@ export interface AuthUser {
 	email: string | null
 	phone?: string | null
 	full_name?: string
+	is_admin?: boolean
+	is_staff?: boolean
+	is_superuser?: boolean
 }
 
 export interface LoginPayloadEmail {
@@ -99,6 +102,9 @@ function enrichUser(u: AuthUser): AuthUser {
 	if (!u.full_name) {
 		const parts = [u.last_name, u.first_name].filter(Boolean)
 		u.full_name = parts.join(' ')
+	}
+	if (u.is_admin == null) {
+		u.is_admin = !!(u as any).is_admin || !!u.is_staff || !!u.is_superuser
 	}
 	return u
 }
