@@ -10,7 +10,10 @@ export const HomePage: React.FC = () => {
 	const items: DepartmentRef[] = departments.map(d => ({
 		id: d.id,
 		name: d.name,
+		headName: d.head ? d.head.first_name : '—',
+		phone: d.code || '—',
 	}))
+	departments.map(d => console.log(d))
 
 	return (
 		<main className={styles.main}>

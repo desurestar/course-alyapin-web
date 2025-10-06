@@ -26,6 +26,27 @@ class ArticleViewSet(viewsets.ModelViewSet):
         ctx = super().get_serializer_context()
         return ctx
 
+    def list(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        search = request.query_params.get('search')
+        author_id = request.query_params.get('author_id')
+        if search:
+            qs = qs.filter(title__icontains=search)
+        if author_id:
+            qs = qs.filter(authors__id=author_id)
+        page = int(request.query_params.get('page', 1) or 1)
+        page_size = int(request.query_params.get('page_size', 20) or 20)
+        total = qs.count()
+        start = (page - 1) * page_size
+        qs = qs.order_by('-id')[start:start+page_size]
+        data = self.get_serializer(qs, many=True).data
+        return Response({
+            'results': data,
+            'count': total,
+            'page': page,
+            'page_size': page_size,
+        })
+
 class GroupProjectViewSet(viewsets.ModelViewSet):
     queryset = GroupProject.objects.all().select_related('group','supervisor')
     serializer_class = GroupProjectSerializer
@@ -45,6 +66,72 @@ class GroupProjectViewSet(viewsets.ModelViewSet):
             qs = qs.filter(group_id=group_id)
         return qs
 
+class ProjectViewSet(viewsets.ModelViewSet):
+    '''Standalone projects CRUD aligning with frontend /projects/ API.
+
+    Front filters: status, search, group (group id).
+    Permissions: list/retrieve any authenticated; create/update/delete only group leader.
+    '''
+    queryset = GroupProject.objects.all().select_related('group','supervisor')
+    serializer_class = GroupProjectSerializer
+    permission_classes = [permissions.IsAuthenticated, IsGroupLeader]
+
+    def get_permissions(self):
+        if self.action in ['list','retrieve']:
+            return [permissions.IsAuthenticated()]
+        return [p() for p in self.permission_classes]
+
+    def filter_queryset(self, qs):
+        request = self.request
+        status = request.query_params.get('status')
+        search = request.query_params.get('search')
+        group_id = request.query_params.get('group')
+        if status:
+            qs = qs.filter(status=status)
+        if group_id:
+            qs = qs.filter(group_id=group_id)
+        if search:
+            qs = qs.filter(title__icontains=search)
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        qs = self.filter_queryset(self.get_queryset())[:500]
+        data = self.get_serializer(qs, many=True).data
+        # Convert to lightweight summary
+        summaries = [
+            {
+                'id': p['id'],
+                'title': p['title'],
+                'status': p['status'],
+                'start_date': p.get('start_date'),
+                'end_date': p.get('end_date'),
+                'supervisor_name': p.get('supervisor_name'),
+                'group_id': p.get('group_id'),
+            } for p in data
+        ]
+        return Response(summaries)
+
+    def perform_create(self, serializer):
+        group_id = self.request.data.get('group_id') or self.request.data.get('group')
+        if not group_id:
+            return Response({'detail':'group_id required'}, status=400)
+        group = ResearchGroup.objects.filter(pk=group_id).first()
+        if not group:
+            return Response({'detail':'Group not found'}, status=404)
+        if group.leader_id != self.request.user.id:
+            return Response({'detail':'Нет прав'}, status=403)
+        serializer.save(group=group, supervisor=self.request.user)
+
+    def update(self, request, *args, **kwargs):
+        # ensure permission (IsGroupLeader covers object)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
 class ProfileView(APIView):
     def get(self, request, id: int):
         user = User.objects.filter(pk=id).first()
@@ -60,7 +147,7 @@ class ProfileView(APIView):
             g = m.group
             leader_id = g.leader_id
             members_qs = g.memberships.select_related('user')
-            members = [
+            _members = [
                 {
                     'id': mm.user_id,
                     'full_name': getattr(mm.user,'full_name', mm.user.get_full_name()) or mm.user.username,
@@ -137,11 +224,6 @@ class GroupDetailView(APIView):
             return Response({'detail':'Not found'}, status=404)
         leader_id = group.leader_id
         member_qs = group.memberships.select_related('user')
-        members = [
-            {'id': m.user_id,
-             'full_name': getattr(m.user,'full_name', m.user.get_full_name()) or m.user.username,
-             'is_leader': m.user_id == leader_id} for m in member_qs
-        ]
         group_article_ids = GroupArticle.objects.filter(group=group).values_list('article_id', flat=True)
         g_articles = Article.objects.filter(id__in=group_article_ids).prefetch_related('authors')
         articles_data = ArticleSerializer(g_articles, many=True, context={'request':request}).data
@@ -153,7 +235,13 @@ class GroupDetailView(APIView):
             'description': group.description,
             'leader_id': leader_id,
             'leader_name': getattr(group.leader,'full_name', None),
-            'members': members,
+            'members': [
+                {
+                    'id': m.user_id,
+                    'full_name': getattr(m.user,'full_name', m.user.get_full_name()) or m.user.username,
+                    'is_leader': m.user_id == leader_id
+                } for m in member_qs
+            ],
             'articles': articles_data,
             'projects': projects_data,
             'members_count': member_qs.count(),

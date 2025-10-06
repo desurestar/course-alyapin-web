@@ -62,16 +62,36 @@ class GroupProjectSerializer(serializers.ModelSerializer):
     )
     supervisor_name = serializers.CharField(source='supervisor.full_name', read_only=True)
     can_edit = serializers.SerializerMethodField()
+    group_id = serializers.IntegerField(source='group.id', read_only=True)
+    tags = serializers.ListField(child=serializers.CharField(), required=False, allow_empty=True)
 
     class Meta:
         model = GroupProject
-        fields = ('id','title','description','status','start_date','end_date','supervisor_id','supervisor_name','can_edit')
+        fields = (
+            'id','title','description','status','start_date','end_date',
+            'supervisor_id','supervisor_name','group_id','budget','currency','grant_id','website','tags','can_edit'
+        )
 
     def get_can_edit(self, obj: GroupProject):
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
             return False
         return obj.group.leader_id == request.user.id
+
+    def to_representation(self, instance: GroupProject):
+        data = super().to_representation(instance)
+        # split tags by comma
+        raw = instance.tags or ''
+        data['tags'] = [t for t in [s.strip() for s in raw.split(',')] if t]
+        return data
+
+    def to_internal_value(self, data):
+        # Accept tags as list or comma string
+        tags_val = data.get('tags')
+        if isinstance(tags_val, list):
+            data = data.copy()
+            data['tags'] = ','.join([str(t).strip() for t in tags_val if str(t).strip()])
+        return super().to_internal_value(data)
 
 class GroupMemberSerializer(serializers.Serializer):
     id = serializers.IntegerField()

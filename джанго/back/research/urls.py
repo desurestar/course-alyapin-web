@@ -1,10 +1,11 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import ArticleViewSet, GroupArticleView, GroupDetailView, GroupListCreateView, GroupMembershipActionsView, GroupProjectActionsView, ProfileView, UserArticlesListView, UserGroupsListView, UserSearchView
+from .views import ArticleViewSet, GroupArticleView, GroupDetailView, GroupListCreateView, GroupMembershipActionsView, GroupProjectActionsView, ProfileView, ProjectViewSet, UserArticlesListView, UserGroupsListView, UserSearchView
 
 router = DefaultRouter()
 router.register('articles', ArticleViewSet, basename='article')
+router.register('projects', ProjectViewSet, basename='project')
 
 urlpatterns = [
     # profile aggregation & user search
