@@ -26,6 +26,9 @@ export const ProfilePage = () => {
 		removeGroup,
 		candidates,
 		refreshCandidates,
+		candidateQuery,
+		setCandidateQuery,
+		candidateLoading,
 		editArticle,
 		removeArticle,
 		addMember,
@@ -184,7 +187,8 @@ export const ProfilePage = () => {
 
 	const openGroupModal = () => {
 		setGroupForm({ name: '', description: '', member_ids: [] })
-		refreshCandidates()
+		setCandidateQuery('')
+		refreshCandidates('')
 		setGroupModal(true)
 	}
 
@@ -198,7 +202,8 @@ export const ProfilePage = () => {
 
 	const openGroupMembersModal = (g: ProfileGroup) => {
 		setGroupMembersTarget(g)
-		refreshCandidates()
+		setCandidateQuery('')
+		refreshCandidates('')
 		setGroupMembersModal(true)
 	}
 
@@ -297,45 +302,40 @@ export const ProfilePage = () => {
 								/>
 							) : (
 								<div className={styles.avatarFallback}>
-									{(
-										profile.full_name ||
-										profile.first_name + ' ' + profile.last_name
-									)
-										.split(' ')
-										.map(p => p[0])
-										.slice(0, 2)
-										.join('')}
+									{(profile.full_name || 'U').slice(0, 1)}
+								</div>
+							)}
+							<input
+								ref={fileInputRef}
+								style={{ display: 'none' }}
+								accept='image/*'
+								type='file'
+								onChange={onAvatarChange}
+							/>
+							{editMode && (
+								<div className={styles.avatarActions}>
+									<button
+										className={styles.smallBtn}
+										type='button'
+										onClick={() => fileInputRef.current?.click()}
+									>
+										{profile.avatar || local.avatar ? 'Сменить' : 'Загрузить'}
+									</button>
+									{(local.avatar || profile.avatar) && (
+										<button
+											type='button'
+											className={`${styles.smallBtn} ${styles.danger}`}
+											onClick={removeAvatar}
+										>
+											Удалить
+										</button>
+									)}
 								</div>
 							)}
 						</div>
-						{editMode && isOwner && (
-							<div className={styles.avatarActions}>
-								<input
-									ref={fileInputRef}
-									style={{ display: 'none' }}
-									accept='image/*'
-									type='file'
-									onChange={onAvatarChange}
-								/>
-								<button
-									className={styles.smallBtn}
-									type='button'
-									onClick={() => fileInputRef.current?.click()}
-								>
-									Загрузить
-								</button>
-								{(local.avatar || profile.avatar) && (
-									<button
-										type='button'
-										className={`${styles.smallBtn} ${styles.danger}`}
-										onClick={removeAvatar}
-									>
-										Удалить
-									</button>
-								)}
-							</div>
-						)}
+						{/* avatarWrapper */}
 					</div>
+					{/* avatarBlock */}
 					{!editMode && (
 						<div>
 							{profile.position && (
@@ -626,13 +626,17 @@ export const ProfilePage = () => {
 							/>
 						</div>
 						<div className={styles.fieldGroup}>
-							<label>Описание</label>
-							<textarea
-								value={groupForm.description}
-								onChange={e =>
-									setGroupForm(f => ({ ...f, description: e.target.value }))
-								}
+							<label>Поиск участников</label>
+							<input
+								value={candidateQuery}
+								placeholder='Начните вводить фамилию...'
+								onChange={e => setCandidateQuery(e.target.value)}
 							/>
+							<div className={styles.helper}>
+								{candidateLoading
+									? 'Поиск...'
+									: `Найдено: ${candidates.length}`}
+							</div>
 						</div>
 						<div className={styles.fieldGroup}>
 							<label>Участники</label>
@@ -653,9 +657,6 @@ export const ProfilePage = () => {
 									</option>
 								))}
 							</select>
-							<div className={styles.helper}>
-								Вы автоматически станете руководителем
-							</div>
 						</div>
 						<div className={styles.actions}>
 							<button
@@ -858,6 +859,24 @@ export const ProfilePage = () => {
 							) : (
 								<div className={styles.helper}>Нет участников</div>
 							)}
+						</div>
+						<div className={styles.fieldGroup}>
+							<label>Поиск</label>
+							<input
+								value={candidateQuery}
+								placeholder='Поиск пользователя...'
+								onChange={e => setCandidateQuery(e.target.value)}
+							/>
+							<div className={styles.helper}>
+								{candidateLoading
+									? 'Поиск...'
+									: `Доступно: ${
+											candidates.filter(
+												c =>
+													!groupMembersTarget.members?.some(m => m.id === c.id)
+											).length
+									  }`}
+							</div>
 						</div>
 						<div className={styles.fieldGroup}>
 							<label>Добавить участника</label>
