@@ -22,10 +22,10 @@ import { ProjectsPage } from './pages/projectsPage/projectsPage'
 import { PublicationPage } from './pages/publicationPage/publicationPage'
 
 function AppShell() {
-	const { authed } = useAuth()
+	const { loggedIn } = useAuth()
 	return (
 		<>
-			{authed && (
+			{loggedIn && (
 				<Header
 					departmentName={departmentName}
 					universityName={universityName}
@@ -99,12 +99,12 @@ function AppShell() {
 					/>
 					<Route
 						path='*'
-						element={<Navigate to={authed ? '/' : '/login'} replace />}
+						element={<Navigate to={loggedIn ? '/' : '/login'} replace />}
 					/>
 				</Routes>
 			</div>
 
-			{authed && (
+			{loggedIn && (
 				<Footer
 					departmentName={departmentName}
 					universityName={universityName}

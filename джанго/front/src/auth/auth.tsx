@@ -5,8 +5,10 @@ import {
 	useEffect,
 	useRef,
 	useState,
+	type ReactElement,
 	type ReactNode,
 } from 'react'
+import { Navigate, useLocation } from 'react-router-dom'
 import { apiLogin, apiLogout, apiMe, apiRegister } from '../api/auth'
 import {
 	attemptRefresh,
@@ -139,11 +141,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		}
 	}, [scheduleRefresh, user])
 
+	const loggedIn = !!user
+
 	const value: AuthContextValue = {
 		user,
 		loading,
 		error,
-		loggedIn: !!user,
+		loggedIn,
+		authed: loggedIn, // backward compat
 		loginEmail: async (email, password) => doLogin({ email, password }),
 		loginPhone: async (phone, password) => doLogin({ phone, password }),
 		register: doRegister,
@@ -160,4 +165,13 @@ export function useAuth(): AuthContextValue {
 	const ctx = useContext(AuthContext)
 	if (!ctx) throw new Error('useAuth must be used within AuthProvider')
 	return ctx
+}
+
+export function RequireAuth({ children }: { children: ReactElement }) {
+	const { loggedIn, loading } = useAuth()
+	const location = useLocation()
+	if (loading) return null
+	if (!loggedIn)
+		return <Navigate to='/login' replace state={{ from: location }} />
+	return children
 }

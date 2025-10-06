@@ -17,6 +17,8 @@ export interface AuthContextValue {
 	loading: boolean
 	error: string | null
 	loggedIn: boolean
+	/** @deprecated use loggedIn */
+	authed?: boolean
 	loginEmail: (email: string, password: string) => Promise<void>
 	loginPhone: (phone: string, password: string) => Promise<void>
 	register: (data: {
