@@ -80,3 +80,25 @@ class ResearchGroupMembership(TimeStamped):
 
     def __str__(self):
         return f'{self.user} -> {self.group} ({self.role})'
+
+
+class DepartmentStaff(TimeStamped):
+    """Связь кафедры и сотрудника с указанием должности (для вывода сотрудников кафедры).
+
+    Frontend ожидает список employees с полями id, full_name, position, email, phone.
+    email/phone можно получить из User, а должность храним отдельно.
+    """
+    department = models.ForeignKey(
+        Department, on_delete=models.CASCADE, related_name='staff'
+    )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='department_staff_entries'
+    )
+    position = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        unique_together = [('department', 'user')]
+        indexes = [models.Index(fields=['department', 'user'])]
+
+    def __str__(self):
+        return f'{self.user} in {self.department} ({self.position or "no position"})'
