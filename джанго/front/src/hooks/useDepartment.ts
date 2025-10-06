@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import {
-	getDepartmentDetail,
-	listDepartmentEmployees,
-	listDepartmentGroups,
-} from '../api/department'
+import { getDepartmentDetail, listDepartmentEmployees } from '../api/department'
 import type { DepartmentDetail } from '../types/department'
 
 export function useDepartment(id: number | undefined) {
@@ -22,13 +18,16 @@ export function useDepartment(id: number | undefined) {
 				setData(null)
 				return
 			}
-			// In future backend may split endpoints, prefetch employees & groups if needed
-			// Example of parallel refinement (currently redundant because detail already has them)
-			const [employees, groups] = await Promise.all([
-				listDepartmentEmployees(id),
-				listDepartmentGroups(id),
-			])
-			setData({ ...detail, employees, groups })
+			// Backend now returns groups inside detail; employees can optionally be refreshed separately
+			let employees = detail.employees
+			try {
+				const fresh = await listDepartmentEmployees(id)
+				// If backend returns minimal employees in detail, we override with full list
+				if (Array.isArray(fresh)) employees = fresh as any
+			} catch {
+				// ignore employees refresh failure, keep detail.employees
+			}
+			setData({ ...detail, employees, groups: detail.groups })
 		} catch (e: any) {
 			setError(e.message || 'Ошибка загрузки')
 		} finally {
