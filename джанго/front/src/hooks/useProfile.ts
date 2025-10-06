@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
+	addGroupMember,
 	createArticle,
 	createGroup,
+	deleteArticle,
+	deleteGroup,
 	getProfileDetail,
 	leaveGroup,
 	listCoAuthorCandidates,
+	removeGroupMember,
+	updateArticle,
+	updateGroup,
 	updateProfile,
 } from '../api/profile'
 import { useAuth } from '../auth/auth'
@@ -13,6 +19,7 @@ import type {
 	NewArticleInput,
 	NewGroupInput,
 	ProfileDetail,
+	UpdateArticleInput,
 } from '../types/profile'
 
 export function useProfile(userId: number) {
@@ -112,6 +119,152 @@ export function useProfile(userId: number) {
 		[profile, currentUser]
 	)
 
+	const modifyGroup = useCallback(
+		async (
+			groupId: number,
+			patch: Partial<{ name: string; description: string; leader_id: number }>
+		) => {
+			if (!profile) return
+			setSaving(true)
+			try {
+				const updated = await updateGroup(groupId, patch)
+				setProfile(p =>
+					p
+						? {
+								...p,
+								groups: p.groups.map(g =>
+									g.id === groupId ? { ...g, ...updated } : g
+								),
+						  }
+						: p
+				)
+			} finally {
+				setSaving(false)
+			}
+		},
+		[profile]
+	)
+
+	const removeGroup = useCallback(
+		async (groupId: number) => {
+			if (!profile) return
+			setSaving(true)
+			try {
+				await deleteGroup(groupId)
+				setProfile(p =>
+					p ? { ...p, groups: p.groups.filter(g => g.id !== groupId) } : p
+				)
+			} finally {
+				setSaving(false)
+			}
+		},
+		[profile]
+	)
+
+	const editArticle = useCallback(
+		async (articleId: number, patch: UpdateArticleInput) => {
+			if (!profile || !currentUser) return
+			setSaving(true)
+			try {
+				const updated = await updateArticle(articleId, currentUser.id, patch)
+				setProfile(p =>
+					p
+						? {
+								...p,
+								articles: p.articles.map(a =>
+									a.id === articleId ? { ...a, ...updated } : a
+								),
+						  }
+						: p
+				)
+			} finally {
+				setSaving(false)
+			}
+		},
+		[profile, currentUser]
+	)
+
+	const removeArticle = useCallback(
+		async (articleId: number) => {
+			if (!profile || !currentUser) return
+			setSaving(true)
+			try {
+				await deleteArticle(articleId, currentUser.id)
+				setProfile(p =>
+					p ? { ...p, articles: p.articles.filter(a => a.id !== articleId) } : p
+				)
+			} finally {
+				setSaving(false)
+			}
+		},
+		[profile, currentUser]
+	)
+
+	const addMember = useCallback(
+		async (groupId: number, userId: number) => {
+			if (!profile) return
+			setSaving(true)
+			try {
+				await addGroupMember(groupId, userId)
+				setProfile(p =>
+					p
+						? {
+								...p,
+								groups: p.groups.map(g =>
+									g.id === groupId
+										? {
+												...g,
+												members_count:
+													(g.members_count || 0) +
+													(g.members?.some(m => m.id === userId) ? 0 : 1),
+												members: g.members
+													? [
+															...g.members,
+															{ id: userId, full_name: 'user#' + userId },
+													  ]
+													: g.members,
+										  }
+										: g
+								),
+						  }
+						: p
+				)
+			} finally {
+				setSaving(false)
+			}
+		},
+		[profile]
+	)
+
+	const removeMember = useCallback(
+		async (groupId: number, userId: number) => {
+			if (!profile) return
+			setSaving(true)
+			try {
+				await removeGroupMember(groupId, userId)
+				setProfile(p =>
+					p
+						? {
+								...p,
+								groups: p.groups.map(g =>
+									g.id === groupId
+										? {
+												...g,
+												members_count: (g.members_count || 0) - 1,
+												members: g.members?.filter(m => m.id !== userId),
+										  }
+										: g
+								),
+						  }
+						: p
+				)
+			} finally {
+				setSaving(false)
+			}
+		},
+		[profile]
+	)
+
 	return {
 		profile,
 		loading,
@@ -122,6 +275,12 @@ export function useProfile(userId: number) {
 		addArticle,
 		createNewGroup,
 		leaveCurrentGroup,
+		modifyGroup,
+		removeGroup,
+		editArticle,
+		removeArticle,
+		addMember,
+		removeMember,
 		candidates,
 		refreshCandidates,
 	}

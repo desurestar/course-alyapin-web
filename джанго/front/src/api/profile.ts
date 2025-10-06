@@ -1,10 +1,12 @@
 import type { UserPublic } from '../types/auth'
 import type {
+	GroupMember,
 	NewArticleInput,
 	NewGroupInput,
 	ProfileArticle,
 	ProfileDetail,
 	ProfileGroup,
+	UpdateArticleInput,
 } from '../types/profile'
 import { getAccessToken } from './http'
 
@@ -67,8 +69,17 @@ let groups: ProfileGroup[] = [
 		name: 'Группа Алгоритмов',
 		description: 'Алг. и структуры',
 		members_count: 2,
+		leader_id: 1,
+		leader_name: 'Иван Иванов',
 	},
-	{ id: 2, name: 'Группа ИИ', description: 'ML & AI', members_count: 3 },
+	{
+		id: 2,
+		name: 'Группа ИИ',
+		description: 'ML & AI',
+		members_count: 3,
+		leader_id: 2,
+		leader_name: 'Пётр Петров',
+	},
 ]
 let nextGroupId = 3
 
@@ -76,6 +87,18 @@ let nextGroupId = 3
 let groupMembers: Record<number, number[]> = {
 	1: [1, 2],
 	2: [2, 1, 3],
+}
+
+function buildMembersArray(groupId: number): GroupMember[] {
+	const memberIds = groupMembers[groupId] || []
+	return memberIds.map((id, idx) => {
+		const u = users.find(u => u.id === id)
+		return {
+			id,
+			full_name: u?.full_name || `user#${id}`,
+			is_leader: idx === 0,
+		}
+	})
 }
 
 function computeGroupsForUser(userId: number): ProfileGroup[] {
@@ -89,6 +112,11 @@ function computeGroupsForUser(userId: number): ProfileGroup[] {
 				role: leader === userId ? 'Руководитель' : 'Участник',
 				is_leader: leader === userId,
 				members_count: members.length,
+				leader_id: g.leader_id ?? leader,
+				leader_name:
+					g.leader_name || users.find(u => u.id === leader)?.full_name || '—',
+				can_manage: leader === userId,
+				members: buildMembersArray(g.id),
 			})
 		}
 	}
@@ -96,7 +124,12 @@ function computeGroupsForUser(userId: number): ProfileGroup[] {
 }
 
 function computeArticlesForUser(userId: number): ProfileArticle[] {
-	return articles.filter(a => a.authors.some(au => au.id === userId))
+	return articles
+		.filter(a => a.authors.some(au => au.id === userId))
+		.map(a => ({
+			...a,
+			can_edit: a.authors.some(au => au.id === userId),
+		}))
 }
 
 export async function getProfileDetail(
@@ -156,7 +189,44 @@ export async function createArticle(
 		authors: authorObjs,
 	}
 	articles.push(art)
-	return { ...art }
+	return { ...art, can_edit: true }
+}
+
+export async function updateArticle(
+	articleId: number,
+	currentUserId: number,
+	patch: UpdateArticleInput
+): Promise<ProfileArticle> {
+	await delay()
+	const idx = articles.findIndex(a => a.id === articleId)
+	if (idx === -1) throw new Error('Article not found')
+	// Ensure current user is an author
+	if (!articles[idx].authors.some(a => a.id === currentUserId)) {
+		throw new Error('Нет прав на редактирование')
+	}
+	if (patch.title !== undefined) articles[idx].title = patch.title.trim()
+	if (patch.abstract !== undefined)
+		articles[idx].abstract = patch.abstract.trim() || undefined
+	if (patch.link !== undefined)
+		articles[idx].link = patch.link.trim() || undefined
+	if (patch.co_author_ids) {
+		const unique = Array.from(new Set([currentUserId, ...patch.co_author_ids]))
+		articles[idx].authors = unique.map(id => {
+			const u = users.find(u => u.id === id)
+			return { id, full_name: u?.full_name || `user#${id}` }
+		})
+	}
+	return { ...articles[idx], can_edit: true }
+}
+
+export async function deleteArticle(articleId: number, currentUserId: number) {
+	await delay()
+	const idx = articles.findIndex(a => a.id === articleId)
+	if (idx === -1) return
+	if (!articles[idx].authors.some(a => a.id === currentUserId)) {
+		throw new Error('Нет прав')
+	}
+	articles.splice(idx, 1)
 }
 
 export async function createGroup(
@@ -172,6 +242,9 @@ export async function createGroup(
 		members_count: 1,
 		is_leader: true,
 		role: 'Руководитель',
+		leader_id: currentUserId,
+		leader_name: users.find(u => u.id === currentUserId)?.full_name,
+		can_manage: true,
 	}
 	groups.push(g)
 	groupMembers[g.id] = [
@@ -179,6 +252,7 @@ export async function createGroup(
 		...input.member_ids.filter(id => id !== currentUserId),
 	]
 	g.members_count = groupMembers[g.id].length
+	g.members = buildMembersArray(g.id)
 	return { ...g }
 }
 
@@ -199,6 +273,68 @@ export async function leaveGroup(
 	}
 }
 
+export async function updateGroup(
+	groupId: number,
+	patch: Partial<{ name: string; description: string; leader_id: number }>
+): Promise<ProfileGroup> {
+	await delay()
+	const idx = groups.findIndex(g => g.id === groupId)
+	if (idx === -1) throw new Error('Group not found')
+	// leader change if provided and exists in members
+	if (patch.leader_id !== undefined) {
+		const members = groupMembers[groupId]
+		if (!members.includes(patch.leader_id)) {
+			throw new Error('Новый руководитель не является участником')
+		}
+		// move new leader to front
+		groupMembers[groupId] = [
+			patch.leader_id,
+			...members.filter(id => id !== patch.leader_id),
+		]
+		groups[idx].leader_id = patch.leader_id
+		groups[idx].leader_name =
+			users.find(u => u.id === patch.leader_id)?.full_name || '—'
+	}
+	if (patch.name !== undefined) groups[idx].name = patch.name.trim()
+	if (patch.description !== undefined)
+		groups[idx].description = patch.description.trim() || undefined
+	const leader = groupMembers[groupId][0]
+	const updated: ProfileGroup = {
+		...groups[idx],
+		members_count: groupMembers[groupId].length,
+		is_leader: true,
+		role: 'Руководитель',
+		can_manage: true,
+		members: buildMembersArray(groupId),
+		leader_id: leader,
+		leader_name:
+			groups[idx].leader_name || users.find(u => u.id === leader)?.full_name,
+	}
+	return { ...updated }
+}
+
+export async function deleteGroup(groupId: number): Promise<void> {
+	await delay()
+	groups = groups.filter(g => g.id !== groupId)
+	delete groupMembers[groupId]
+}
+
+export async function addGroupMember(groupId: number, userId: number) {
+	await delay()
+	const members = groupMembers[groupId]
+	if (!members) throw new Error('Group not found')
+	if (!members.includes(userId)) members.push(userId)
+}
+
+export async function removeGroupMember(groupId: number, userId: number) {
+	await delay()
+	const members = groupMembers[groupId]
+	if (!members) throw new Error('Group not found')
+	// Don't remove leader here
+	if (members[0] === userId) throw new Error('Нельзя удалить руководителя')
+	groupMembers[groupId] = members.filter(id => id !== userId)
+}
+
 export async function listCoAuthorCandidates(
 	excludeIds: number[]
 ): Promise<UserPublic[]> {
@@ -214,8 +350,15 @@ function delay(ms = 250) {
 // getProfileDetail -> GET /users/{id}/profile/ (includes groups, articles)
 // updateProfile -> PATCH /users/{id}/
 // createArticle -> POST /articles/ { title, abstract, link, co_author_ids }
+// updateArticle -> PATCH /articles/{id}/ { title?, abstract?, link?, co_author_ids? }
+// deleteArticle -> DELETE /articles/{id}/
 // createGroup -> POST /groups/ { name, description, member_ids }
 // leaveGroup -> POST /groups/{id}/leave/ OR DELETE /group-memberships/{id}/
 // listCoAuthorCandidates -> GET /users/?search=... (filter on server)
+// updateGroup -> PATCH /groups/{id}/ { name?, description?, leader_id? }
+// deleteGroup -> DELETE /groups/{id}/
+// change leader also via PATCH /groups/{id}/ with leader_id
+// addGroupMember -> POST /groups/{id}/add_member/ { user_id }
+// removeGroupMember -> POST /groups/{id}/remove_member/ { user_id }
 
 void getAccessToken // placeholder for future auth header usage

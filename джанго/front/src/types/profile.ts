@@ -7,6 +7,7 @@ export interface ProfileArticle {
 	link?: string
 	authors: { id: number; full_name: string }[]
 	created_at?: string
+	can_edit?: boolean // текущий пользователь может редактировать (является автором)
 }
 
 export interface ProfileGroup {
@@ -16,6 +17,16 @@ export interface ProfileGroup {
 	role?: string // роль текущего пользователя в этой группе
 	is_leader?: boolean
 	members_count?: number
+	leader_id?: number
+	leader_name?: string
+	can_manage?: boolean // текущий пользователь может редактировать (обычно лидер)
+	members?: GroupMember[] // подробный список участников (опционально)
+}
+
+export interface GroupMember {
+	id: number
+	full_name: string
+	is_leader?: boolean
 }
 
 export interface ProfileDetail extends UserPublic {
@@ -33,6 +44,13 @@ export interface NewArticleInput {
 	abstract?: string
 	link?: string
 	co_author_ids: number[]
+}
+
+export interface UpdateArticleInput {
+	title?: string
+	abstract?: string
+	link?: string
+	co_author_ids?: number[]
 }
 
 export interface NewGroupInput {
