@@ -17,7 +17,6 @@ import {
 	deleteArticleApi,
 	updateArticleApi,
 } from './articles'
-import { API_USE_MOCK } from './config'
 import {
 	addGroupMemberApi,
 	createGroupApi,
@@ -35,7 +34,7 @@ import {
 // NOTE: В режиме моков (API_USE_MOCK = true) динамически импортируем предыдущее содержимое (которое теперь разнесено между profile.mockState.ts и исторической логикой).
 // Для совместимости оставляем те же имена экспорируемых функций.
 
-const USE_MOCK = API_USE_MOCK
+const USE_MOCK = false
 let mockModule: any | null = null
 async function ensureMock() {
 	if (!mockModule) {

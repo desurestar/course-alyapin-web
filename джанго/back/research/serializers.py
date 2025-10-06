@@ -126,4 +126,7 @@ class ProfileDetailSerializer(serializers.Serializer):
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('first_name','last_name','email','phone')
+        fields = ('first_name','last_name','email','phone','position','bio','avatar')
+        extra_kwargs = {
+            'avatar': {'required': False},
+        }

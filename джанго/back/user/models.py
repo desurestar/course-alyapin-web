@@ -12,6 +12,21 @@ class User(AbstractUser):
         help_text='Phone number in international or local format'
     )
 
+    position = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text='Должность / позиция пользователя'
+    )
+    bio = models.TextField(
+        blank=True,
+        help_text='Краткая биография / описание'
+    )
+    avatar = models.ImageField(
+        upload_to='avatars/',
+        blank=True,
+        help_text='Изображение аватара'
+    )
+
     @property
     def full_name(self):  # matches frontend expectation
         base = (self.last_name or '', self.first_name or '')
