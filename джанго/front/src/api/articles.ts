@@ -3,11 +3,11 @@ import type {
 	ProfileArticle,
 	UpdateArticleInput,
 } from '../types/profile'
+import { API_USE_MOCK } from './config'
 import { http } from './http'
 
 // Toggle to switch between mock profile.ts implementation and real HTTP later
-const USE_MOCK = false
-// If using mock, we re-export from profile mock functions (they already contain logic)
+const USE_MOCK = API_USE_MOCK
 // Real backend endpoints documented below.
 
 // Backend mapping (intended production endpoints):
@@ -53,6 +53,48 @@ export async function listUserArticles(
 		return p?.articles || []
 	}
 	return http<ProfileArticle[]>(`/users/${userId}/articles/`, { auth: true })
+}
+
+// Generic list with optional search & author filter (& naive pagination mapping to backend plan)
+export async function listArticles(
+	params: {
+		search?: string
+		author_id?: number
+		page?: number
+		page_size?: number
+	} = {}
+): Promise<{
+	results: ProfileArticle[]
+	count: number
+	page: number
+	page_size: number
+}> {
+	if (USE_MOCK) {
+		const m = await loadMock()
+		const { search, author_id, page = 1, page_size = 20 } = params
+		let list: ProfileArticle[] = (m as any).articles.map(
+			(a: ProfileArticle) => ({ ...a, can_edit: true })
+		)
+		if (author_id)
+			list = list.filter(a => a.authors.some(au => au.id === author_id))
+		if (search) {
+			const q = search.toLowerCase()
+			list = list.filter(a => a.title.toLowerCase().includes(q))
+		}
+		const start = (page - 1) * page_size
+		return {
+			results: list.slice(start, start + page_size),
+			count: list.length,
+			page,
+			page_size,
+		}
+	}
+	const query = new URLSearchParams()
+	if (params.search) query.set('search', params.search)
+	if (params.author_id) query.set('author_id', String(params.author_id))
+	if (params.page) query.set('page', String(params.page))
+	if (params.page_size) query.set('page_size', String(params.page_size))
+	return http(`/articles/?${query.toString()}`, { auth: true })
 }
 
 export async function createArticleApi(
