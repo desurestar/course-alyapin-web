@@ -56,7 +56,29 @@ export async function getGroup(id: number): Promise<ProfileGroup> {
 			can_manage: false,
 		}
 	}
-	return http<ProfileGroup>(`/groups/${id}/`, { auth: true })
+	const raw: any = await http<ProfileGroup & { memberships?: any[] }>(
+		`/groups/${id}/`,
+		{
+			auth: true,
+		}
+	)
+	// Backend returns 'memberships' (each with user + role). Map to frontend 'members'.
+	if (!raw.members && Array.isArray((raw as any).memberships)) {
+		const members: GroupMember[] = raw.memberships.map((m: any) => ({
+			id: m.user?.id ?? m.user_id ?? m.id,
+			full_name:
+				m.user?.full_name ||
+				(m.user
+					? `${m.user.first_name || ''} ${m.user.last_name || ''}`.trim() ||
+					  m.user.username
+					: 'user#' + (m.user?.id ?? '')),
+			is_leader: m.role === 'leader',
+		}))
+		raw.members = members
+		if (typeof raw.members_count === 'undefined')
+			raw.members_count = members.length
+	}
+	return raw as ProfileGroup
 }
 
 export async function listUserGroups(userId: number): Promise<ProfileGroup[]> {
