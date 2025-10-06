@@ -113,6 +113,23 @@ class UserSearchView(APIView):
         data = UserPublicSerializer(qs, many=True).data
         return Response(data)
 
+class UserArticlesListView(APIView):
+    '''Return list of articles authored by the given user.
+
+    Frontend expects endpoint: GET /users/<user_id>/articles/
+    See front/src/api/articles.ts (listUserArticles).
+    Auth required (passes auth: true in http call).
+    '''
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, user_id:int):
+        user = User.objects.filter(pk=user_id).first()
+        if not user:
+            return Response({'detail':'Not found'}, status=404)
+        qs = Article.objects.filter(authors=user).prefetch_related('authors').order_by('-id')
+        data = ArticleSerializer(qs, many=True, context={'request':request}).data
+        return Response(data)
+
 class GroupDetailView(APIView):
     def get(self, request, id:int):
         group = ResearchGroup.objects.filter(pk=id).first()

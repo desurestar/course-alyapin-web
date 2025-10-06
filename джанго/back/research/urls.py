@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import ArticleViewSet, GroupArticleView, GroupDetailView, GroupListCreateView, GroupMembershipActionsView, GroupProjectActionsView, ProfileView, UserGroupsListView, UserSearchView
+from .views import ArticleViewSet, GroupArticleView, GroupDetailView, GroupListCreateView, GroupMembershipActionsView, GroupProjectActionsView, ProfileView, UserArticlesListView, UserGroupsListView, UserSearchView
 
 router = DefaultRouter()
 router.register('articles', ArticleViewSet, basename='article')
@@ -26,4 +26,5 @@ urlpatterns = [
     path('groups/<int:id>/leave/', GroupMembershipActionsView.as_view(), {'action':'leave'}, name='group-leave'),
     path('groups/<int:id>/add_member/', GroupMembershipActionsView.as_view(), {'action':'add_member'}, name='group-add-member'),
     path('groups/<int:id>/remove_member/', GroupMembershipActionsView.as_view(), {'action':'remove_member'}, name='group-remove-member'),
+    path('users/<int:user_id>/articles/', UserArticlesListView.as_view(), name='user-articles'),
 ] + router.urls
