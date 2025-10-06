@@ -13,7 +13,12 @@ except admin.sites.NotRegistered:
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    # Оставляем (или настраиваем) нужные колонки
-    list_display = ('id', 'username', 'email', 'first_name', 'last_name')
-    search_fields = ('username', 'email')
-    # Можно добавить при необходимости: list_filter, ordering и т.п.
+    # Колонки + телефон
+    list_display = ('id', 'username', 'email', 'phone', 'first_name', 'last_name')
+    search_fields = ('username', 'email', 'phone')
+    fieldsets = BaseUserAdmin.fieldsets + (
+        ('Дополнительно', {'fields': ('phone',)}),
+    )
+    add_fieldsets = BaseUserAdmin.add_fieldsets + (
+        (None, {'fields': ('phone',)}),
+    )
