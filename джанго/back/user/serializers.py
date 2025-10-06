@@ -17,6 +17,8 @@ class UserPublicSerializer(serializers.ModelSerializer):
             'email',
             'phone',
             'full_name',
+            'is_staff',
+            'is_superuser',
         )
 
 

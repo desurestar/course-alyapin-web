@@ -6,6 +6,7 @@ export interface UserPublic {
 	phone?: string | null
 	full_name?: string
 	is_superuser?: boolean
+	is_staff?: boolean
 }
 
 export interface AuthTokens {

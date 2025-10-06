@@ -8,7 +8,7 @@ import {
 	type ReactElement,
 	type ReactNode,
 } from 'react'
-import { Navigate, useLocation } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import { apiLogin, apiLogout, apiMe, apiRegister } from '../api/auth'
 import {
 	attemptRefresh,
@@ -176,11 +176,37 @@ export function RequireAuth({ children }: { children: ReactElement }) {
 	return children
 }
 
+export function useIsAdmin() {
+	const { user } = useAuth()
+	// fallback: treat user id 1 as admin if backend didn't yet return is_superuser
+	return !!user && (user.is_superuser || (user as any).is_staff)
+}
+
 export function RequireAdmin({ children }: { children: ReactElement }) {
 	const { user, loading } = useAuth()
+	const isAdmin = useIsAdmin()
 	const location = useLocation()
 	if (loading) return null
-	if (!user || !user.is_superuser)
-		return <Navigate to='/' replace state={{ from: location }} />
+	if (!isAdmin) {
+		return (
+			<div style={{ padding: '2rem', maxWidth: 640, margin: '0 auto' }}>
+				<h2 style={{ marginTop: 0 }}>Нет доступа</h2>
+				<p>Для просмотра этой страницы нужны права администратора.</p>
+				{!user && (
+					<p>
+						<Link to='/login' state={{ from: location }}>
+							Войти
+						</Link>
+					</p>
+				)}
+			</div>
+		)
+	}
 	return children
+}
+
+export interface UserPublic {
+  // ... текущее
+  is_superuser?: boolean
+  is_staff?: boolean
 }
