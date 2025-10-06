@@ -75,3 +75,10 @@ function delay(ms = 200) {
 
 // Placeholder: access token available via getAccessToken() for future HTTP calls
 void getAccessToken
+
+// REAL BACKEND ПРИМЕР (заменить функции ниже):
+// import { http } from './http'
+// export async function listDepartments() { return http('departments/', { auth:false }) }
+// export async function createDepartment(data: DepartmentInput) { return http('departments/', { method:'POST', body: JSON.stringify(data), auth:true }) }
+// export async function updateDepartment(id:number,data:DepartmentInput){ return http(`departments/${id}/`, { method:'PUT', body: JSON.stringify(data), auth:true }) }
+// export async function deleteDepartment(id:number){ return http(`departments/${id}/`, { method:'DELETE', auth:true }) }
