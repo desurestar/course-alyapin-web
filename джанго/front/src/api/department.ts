@@ -3,75 +3,73 @@ import type {
 	DepartmentInput,
 	EmployeeOption,
 } from '../types/department'
-import { getAccessToken } from './http'
+import { http } from './http'
 
-// In-memory mock store (replace with real HTTP calls later)
-let _departments: Department[] = [
-	{
-		id: 1,
-		name: 'Кафедра информатики',
-		short_name: 'Инф',
-		code: 'INF',
-		description: 'Описание кафедры информатики',
-		head_id: 101,
-	},
-	{
-		id: 2,
-		name: 'Кафедра математики',
-		short_name: 'Мат',
-		code: 'MATH',
-		description: 'Описание кафедры математики',
-		head_id: 102,
-	},
-]
-let _nextId = 3
-
-// Employees mock
-const _employees: EmployeeOption[] = [
-	{ id: 101, full_name: 'Иванов Иван Иванович' },
-	{ id: 102, full_name: 'Петров Пётр Петрович' },
-	{ id: 103, full_name: 'Сидорова Анна Сергеевна' },
-	{ id: 104, full_name: 'Кузнецова Мария Николаевна' },
-]
+// Реализация обращается к реальному backend API (/api/)
+// Маршруты соответствуют backend router'у:
+//  GET    /api/departments/               -> list
+//  POST   /api/departments/               -> create
+//  GET    /api/departments/:id/           -> retrieve (в ответе detail + info + groups)
+//  PUT/PATCH /api/departments/:id/        -> update
+//  DELETE /api/departments/:id/           -> delete
+//  GET    /api/employees/                 -> список сотрудников (id, full_name,...)
+//  (дополнительно можно будет реализовать upsert_info и т.п.)
 
 export async function listDepartments(): Promise<Department[]> {
-	await delay()
-	return structuredClone(_departments)
+	return http<Department[]>('/api/departments/', { auth: true })
 }
+
 export async function getDepartment(id: number): Promise<Department | null> {
-	await delay()
-	return structuredClone(_departments.find(d => d.id === id) || null)
+	return http<Department | null>(`/api/departments/${id}/`, { auth: true })
 }
+
 export async function createDepartment(
 	data: DepartmentInput
 ): Promise<Department> {
-	await delay()
-	const dept: Department = { id: _nextId++, ...data }
-	_departments.push(dept)
-	return structuredClone(dept)
+	return http<Department>('/api/departments/', {
+		method: 'POST',
+		body: JSON.stringify(data),
+		auth: true,
+	})
 }
+
 export async function updateDepartment(
 	id: number,
 	data: DepartmentInput
 ): Promise<Department> {
-	await delay()
-	const idx = _departments.findIndex(d => d.id === id)
-	if (idx === -1) throw new Error('Not found')
-	_departments[idx] = { ..._departments[idx], ...data }
-	return structuredClone(_departments[idx])
+	return http<Department>(`/api/departments/${id}/`, {
+		method: 'PATCH',
+		body: JSON.stringify(data),
+		auth: true,
+	})
 }
+
 export async function deleteDepartment(id: number): Promise<void> {
-	await delay()
-	_departments = _departments.filter(d => d.id !== id)
+	await http(`/api/departments/${id}/`, { method: 'DELETE', auth: true })
 }
+
 export async function listEmployees(): Promise<EmployeeOption[]> {
-	await delay()
-	return structuredClone(_employees)
+	return http<EmployeeOption[]>('/api/employees/', { auth: true })
 }
 
-function delay(ms = 200) {
-	return new Promise(res => setTimeout(res, ms))
+// Дополнительно: обновление/создание расширенной информации о кафедре
+export interface DepartmentInfoUpsert {
+	history?: string
+	mission?: string
+	educational_activities?: string
+	scientific_activities?: string
+	achievements?: string
+	equipment?: string
+	contacts?: string
 }
 
-// Placeholder: access token available via getAccessToken() for future HTTP calls
-void getAccessToken
+export async function upsertDepartmentInfo(
+	departmentId: number,
+	data: DepartmentInfoUpsert
+) {
+	return http(`/api/departments/${departmentId}/upsert_info/`, {
+		method: 'POST',
+		body: JSON.stringify(data),
+		auth: true,
+	})
+}
