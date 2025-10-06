@@ -1,0 +1,300 @@
+:root {
+	--h-bg: rgba(11, 18, 32, 0.85);
+	--h-border: #1f2937;
+	--h-text: #e5e7eb;
+}
+
+.departmentHeader {
+	position: sticky;
+	top: 0;
+	z-index: 1000;
+	background: var(--h-bg);
+	border-bottom: 1px solid var(--h-border);
+	margin: 0;
+}
+
+/* ЕДИНЫЙ контейнер */
+.container {
+	width: 100%;
+	max-width: var(--container-max);
+	margin: 0 auto;
+	padding: 0 var(--container-pad-x);
+	box-sizing: border-box;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+/* остальное – без изменений визуала */
+.departmentMainHeader {
+	padding: 10px 0;
+}
+.departmentBrand {
+	display: inline-flex;
+	align-items: center;
+	gap: 12px;
+}
+.brandLogo {
+	width: 40px;
+	height: 40px;
+	object-fit: contain;
+	border-radius: 8px;
+	border: 1px solid var(--h-border);
+	padding: 4px;
+}
+.brandDepartment {
+	margin: 0;
+	line-height: 1.2;
+	font-size: 18px;
+	color: var(--h-text);
+}
+.headerActions {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.searchForm {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+.searchInput {
+	height: 36px;
+	width: min(42vw, 320px);
+	padding: 0 10px;
+	border-radius: 10px;
+	border: 1px solid var(--h-border);
+	background: rgba(148, 163, 184, 0.06);
+	color: var(--h-text);
+	outline: none;
+}
+.searchInput::placeholder {
+	color: var(--h-muted);
+}
+.searchInput:focus {
+	border-color: rgba(56, 189, 248, 0.45);
+	box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15) inset;
+}
+
+.searchBtn {
+	height: 36px;
+	padding: 0 12px;
+	border-radius: 10px;
+	border: 1px solid var(--h-border);
+	background: rgba(148, 163, 184, 0.06);
+	color: var(--h-text);
+	cursor: pointer;
+}
+.searchBtn:hover {
+	background: rgba(148, 163, 184, 0.1);
+}
+
+/* Иконки действий */
+.iconBtn {
+	width: 40px;
+	height: 40px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--h-border);
+	border-radius: 10px;
+	background: rgba(148, 163, 184, 0.06);
+	color: #cbd5e1;
+	cursor: pointer;
+}
+.iconBtn:hover {
+	background: rgba(148, 163, 184, 0.1);
+}
+.iconBtn svg {
+	width: 18px;
+	height: 18px;
+	fill: currentColor;
+}
+
+.profileBtn {
+	color: var(--h-accent);
+}
+.profileBtn:hover {
+	color: #22d3ee;
+}
+
+.logoutBtn {
+	color: #f87171;
+}
+.logoutBtn:hover {
+	color: #fecaca;
+}
+
+/* Бургер */
+.mobileToggle {
+	width: 40px;
+	height: 40px;
+	display: none; /* desktop скрыт */
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--h-border);
+	border-radius: 10px;
+	background: rgba(148, 163, 184, 0.06);
+}
+.mobileToggle span {
+	display: block;
+	width: 18px;
+	height: 2px;
+	background: #cbd5e1;
+	margin: 2px 0;
+	transition: transform 0.15s ease, opacity 0.15s ease,
+		background-color 0.15s ease;
+}
+
+/* Открытый бургер */
+.mobileToggle.isOpen {
+	background: rgba(148, 163, 184, 0.12);
+}
+.mobileToggle.isOpen span:nth-child(1) {
+	transform: translateY(4px) rotate(45deg);
+}
+.mobileToggle.isOpen span:nth-child(2) {
+	opacity: 0;
+}
+.mobileToggle.isOpen span:nth-child(3) {
+	transform: translateY(-4px) rotate(-45deg);
+}
+
+/* Навигация */
+.departmentNav {
+	border-top: 1px solid var(--h-border);
+	background: var(--h-bg);
+}
+
+.navList {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0 16px;
+	list-style: none;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	height: 44px;
+}
+
+.navItem {
+	position: relative;
+}
+.hasSub {
+	/* визуально как обычный пункт, но с caret */
+}
+
+.navLink,
+.submenuToggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 44px;
+	padding: 0 10px;
+	color: var(--h-text);
+	text-decoration: none;
+	border-radius: 8px;
+}
+.navLink:hover,
+.submenuToggle:hover {
+	background: rgba(148, 163, 184, 0.08);
+}
+
+.caret {
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	border-right: 2px solid var(--h-muted);
+	border-bottom: 2px solid var(--h-muted);
+	transform: rotate(45deg);
+	margin-top: -2px;
+	transition: transform 0.15s ease;
+}
+.caretOpen {
+	transform: rotate(-135deg);
+	margin-top: 2px;
+}
+
+/* Выпадающее меню (desktop) */
+.submenu {
+	position: absolute;
+	top: calc(100% - 2px);
+	left: 0;
+	min-width: 220px;
+	padding: 6px;
+	background: rgba(15, 23, 42, 0.98);
+	border: 1px solid var(--h-border);
+	border-radius: 10px;
+	box-shadow: 0 10px 30px rgba(2, 6, 23, 0.4);
+	list-style: none;
+	display: none;
+	z-index: 1001;
+}
+.submenuItem {
+}
+.submenuLink {
+	display: block;
+	padding: 8px 10px;
+	color: var(--h-text);
+	text-decoration: none;
+	border-radius: 8px;
+}
+.submenuLink:hover {
+	background: rgba(148, 163, 184, 0.08);
+}
+
+.submenuOpen {
+	display: block;
+}
+
+/* Мобильная навигация */
+@media (max-width: 768px) {
+	.searchForm {
+		display: none;
+	}
+	.mobileToggle {
+		display: inline-flex;
+	}
+
+	.navList {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 4px;
+		height: auto;
+		padding: 8px 16px 12px;
+	}
+
+	.departmentNav {
+		display: none;
+		border-top: none;
+	}
+	.navOpen {
+		display: block;
+	}
+
+	.navLink,
+	.submenuToggle {
+		height: 38px;
+		padding: 0 12px;
+		border-radius: 10px;
+		background: rgba(148, 163, 184, 0.06);
+	}
+
+	.submenu {
+		position: static;
+		display: none;
+		padding: 6px 6px 8px;
+		background: transparent;
+		border: 0;
+		box-shadow: none;
+	}
+	.submenuOpen {
+		display: block;
+	}
+
+	.submenuLink {
+		padding: 8px 12px;
+	}
+}

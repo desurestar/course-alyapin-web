@@ -1,0 +1,139 @@
+:root {
+	--bg: #0b1220;
+	--text: #e5e7eb;
+	--muted: #94a3b8;
+	--head: #ffffff;
+	--accent: #38bdf8;
+	--accent2: #22d3ee;
+	--border: #1f2937;
+	--card: rgba(148, 163, 184, 0.06);
+}
+
+.page {
+	min-height: 70vh;
+	display: grid;
+	place-items: start center;
+	padding: 24px 16px;
+	color: var(--text);
+}
+
+.card {
+	width: 100%;
+	max-width: 520px;
+	background: var(--card);
+	border: 1px solid var(--border);
+	border-radius: 14px;
+	padding: 16px;
+	box-shadow: 0 12px 30px rgba(2, 6, 23, 0.45);
+}
+
+.tabs {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.tab {
+	padding: 10px 12px;
+	border-radius: 10px;
+	border: 1px solid var(--border);
+	background: rgba(148, 163, 184, 0.06);
+	color: var(--text);
+	cursor: pointer;
+}
+.tab:hover {
+	background: rgba(148, 163, 184, 0.1);
+}
+.active {
+	color: var(--head);
+	border-color: rgba(56, 189, 248, 0.35);
+	background: rgba(56, 189, 248, 0.12);
+}
+
+.form {
+	display: grid;
+	gap: 12px;
+}
+
+.methodSwitch {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	color: var(--muted);
+}
+
+.methodLabel {
+	font-size: 14px;
+}
+
+.radio {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--text);
+}
+
+.field {
+	display: grid;
+	gap: 6px;
+}
+.label {
+	color: var(--muted);
+	font-size: 14px;
+}
+
+.input {
+	width: 100%;
+	padding: 10px 12px;
+	border-radius: 10px;
+	border: 1px solid var(--border);
+	background: rgba(148, 163, 184, 0.06);
+	color: var(--text);
+}
+.input::placeholder {
+	color: var(--muted);
+}
+
+.error {
+	color: #fca5a5;
+	background: rgba(239, 68, 68, 0.08);
+	border: 1px solid rgba(239, 68, 68, 0.35);
+	border-radius: 10px;
+	padding: 10px 12px;
+	font-size: 14px;
+}
+
+.actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	justify-content: space-between;
+	margin-top: 4px;
+}
+
+.submit {
+	padding: 10px 14px;
+	border-radius: 10px;
+	border: 1px solid var(--border);
+	background: rgba(56, 189, 248, 0.12);
+	color: var(--accent);
+	cursor: pointer;
+}
+.submit:hover {
+	color: var(--accent2);
+	border-color: rgba(56, 189, 248, 0.35);
+}
+
+.linkBtn {
+	background: transparent;
+	border: 0;
+	color: var(--text);
+	text-decoration: underline;
+	cursor: pointer;
+	padding: 8px 6px;
+	border-radius: 8px;
+}
+.linkBtn:hover {
+	color: var(--head);
+}

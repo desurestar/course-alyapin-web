@@ -1,0 +1,348 @@
+/* Базовые переменные темы */
+:root {
+	--footer-bg: #0f172a;
+	--footer-bg-2: #111827;
+	--footer-text: #e5e7eb;
+	--footer-muted: #9ca3af;
+	--footer-accent: #38bdf8;
+	--footer-accent-2: #22d3ee;
+	--footer-border: #1f2937;
+	--footer-link: #cbd5e1;
+	--footer-link-hover: #ffffff;
+	--focus-ring: 0 0 0 3px rgba(56, 189, 248, 0.35);
+}
+
+/* Корневой контейнер футера */
+.footer,
+.footerRoot,
+.root {
+	width: 100%;
+	margin: 0; /* убираем внешний отступ футера */
+	padding: 16px; /* внутренние отступы — по дизайну */
+	box-sizing: border-box;
+	background: var(--f-bg);
+	border-top: 1px solid var(--f-border);
+	color: var(--f-text);
+}
+
+/* ЕДИНЫЙ контейнер */
+.container,
+.inner,
+.content {
+	width: 100%;
+	max-width: var(--container-max);
+	margin: 0 auto;
+	padding: 16px var(--container-pad-x);
+	box-sizing: border-box;
+}
+
+/* Корневой блок футера */
+.departmentFooter {
+	background: linear-gradient(
+		180deg,
+		var(--footer-bg) 0%,
+		var(--footer-bg-2) 100%
+	);
+	color: var(--footer-text);
+	border-top: 1px solid var(--footer-border);
+	margin-top: 40px;
+}
+
+/* Контентная сетка */
+.footerContent {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 40px 16px 24px;
+	display: grid;
+	grid-template-columns: 2fr 1.2fr 1.2fr;
+	gap: 32px;
+}
+
+@media (max-width: 992px) {
+	.footerContent {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
+@media (max-width: 640px) {
+	.footerContent {
+		grid-template-columns: 1fr;
+		gap: 24px;
+		padding: 28px 14px 18px;
+	}
+}
+
+/* Общие секции */
+.footerSection {
+	min-width: 0;
+}
+
+.footerSectionTitle {
+	font-size: 14px;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--footer-muted);
+	margin: 0 0 12px;
+}
+
+/* Основная секция: бренд + контакты */
+.footerMain {
+	grid-column: 1 / -1;
+	display: grid;
+	grid-template-columns: 1.4fr 1fr;
+	gap: 24px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid var(--footer-border);
+}
+
+@media (max-width: 992px) {
+	.footerMain {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Брендинг */
+.footerBrand {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.footerDepartmentName {
+	margin: 0;
+	font-size: 22px;
+	font-weight: 700;
+	line-height: 1.25;
+	color: var(--footer-link-hover);
+}
+
+.footerUniversityName {
+	margin: 0;
+	font-size: 15px;
+	color: var(--footer-muted);
+}
+
+/* Контакты */
+.footerContacts {
+	display: grid;
+	gap: 10px;
+	align-content: start;
+}
+
+.contactItem {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	color: var(--footer-text);
+	font-size: 15px;
+}
+
+.contactIcon {
+	display: inline-flex;
+	width: 28px;
+	height: 28px;
+	align-items: center;
+	justify-content: center;
+	border-radius: 8px;
+	background: rgba(56, 189, 248, 0.08);
+	color: var(--footer-accent);
+	flex: 0 0 28px;
+}
+
+.contactLink {
+	color: var(--footer-link);
+	text-decoration: none;
+	border-bottom: 1px dashed transparent;
+	transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.contactLink:hover,
+.contactLink:focus {
+	color: var(--footer-link-hover);
+	border-color: var(--footer-accent);
+	outline: none;
+	box-shadow: var(--focus-ring);
+	border-radius: 2px;
+}
+
+/* Быстрые ссылки */
+.footerLinks .footerLinksList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 10px;
+}
+
+.footerLinkItem {
+	display: block;
+}
+
+.footerLink {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--footer-link);
+	text-decoration: none;
+	padding: 4px 0;
+	transition: color 0.2s ease, transform 0.15s ease;
+}
+
+.footerLink::before {
+	content: '›';
+	color: var(--footer-accent);
+	transform: translateY(-1px);
+}
+
+.footerLink:hover,
+.footerLink:focus {
+	color: var(--footer-link-hover);
+	outline: none;
+	transform: translateX(2px);
+}
+
+/* Соцсети */
+.footerSocial .socialLinks {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.socialLink {
+	width: 36px;
+	height: 36px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--footer-link-hover);
+	background: rgba(148, 163, 184, 0.08);
+	border: 1px solid var(--footer-border);
+	border-radius: 10px;
+	text-decoration: none;
+	transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease,
+		box-shadow 0.2s ease;
+}
+
+.socialLink:hover,
+.socialLink:focus {
+	background: rgba(56, 189, 248, 0.12);
+	border-color: rgba(56, 189, 248, 0.35);
+	transform: translateY(-1px);
+	outline: none;
+	box-shadow: var(--focus-ring);
+}
+
+/* Партнёры */
+.footerPartners .partnersGrid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 14px;
+}
+
+@media (max-width: 992px) {
+	.footerPartners .partnersGrid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 640px) {
+	.footerPartners .partnersGrid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+.partnerLink {
+	display: block;
+	padding: 10px;
+	background: rgba(148, 163, 184, 0.06);
+	border: 1px solid var(--footer-border);
+	border-radius: 12px;
+	text-align: center;
+	transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease,
+		box-shadow 0.2s ease;
+}
+
+.partnerLink:hover,
+.partnerLink:focus {
+	background: rgba(56, 189, 248, 0.1);
+	border-color: rgba(56, 189, 248, 0.35);
+	transform: translateY(-2px);
+	outline: none;
+	box-shadow: var(--focus-ring);
+}
+
+.partnerLogo {
+	max-width: 100%;
+	max-height: 40px;
+	object-fit: contain;
+	filter: grayscale(20%);
+	opacity: 0.9;
+	transition: filter 0.2s ease, opacity 0.2s ease;
+}
+
+.partnerLink:hover .partnerLogo,
+.partnerLink:focus .partnerLogo {
+	filter: grayscale(0%);
+	opacity: 1;
+}
+
+/* Нижняя панель */
+.footerBottom {
+	border-top: 1px solid var(--footer-border);
+	background: rgba(2, 6, 23, 0.4);
+}
+
+.footerBottomContent {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 14px 16px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	justify-content: space-between;
+	flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+	.footerBottomContent {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 8px;
+	}
+}
+
+.copyright {
+	margin: 0;
+	font-size: 13px;
+	color: var(--footer-muted);
+}
+
+.footerBottomLinks {
+	display: flex;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.bottomLink {
+	color: var(--footer-link);
+	text-decoration: none;
+	font-size: 14px;
+	border-bottom: 1px dashed transparent;
+	transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.bottomLink:hover,
+.bottomLink:focus {
+	color: var(--footer-link-hover);
+	border-color: var(--footer-accent-2);
+	outline: none;
+	box-shadow: var(--focus-ring);
+	border-radius: 2px;
+}
+
+/* Дополнительно: визуальные разделители секций после .footerMain */
+.footerLinks,
+.footerSocial,
+.footerPartners {
+	padding-top: 8px;
+}
