@@ -147,7 +147,7 @@ export const GroupPage: FC = () => {
 		await deleteGroup()
 		navigate(-1)
 	}
-
+	group.members.map(m => console.log(m))
 	return (
 		<main className={`${styles.main} ${saving ? styles.saving : ''}`}>
 			<section className={styles.headerCard}>

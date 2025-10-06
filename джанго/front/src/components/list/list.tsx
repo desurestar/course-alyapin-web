@@ -204,6 +204,15 @@ function getColumns(variant: ListVariant): Column<any>[] {
 					render: (g: Grant) => formatDateRange(g.startDate, g.endDate),
 				},
 			]
+		case 'groupMembers': // добавлено
+			return [
+				{ header: 'ФИО', render: (i: GroupMember) => i.fullName },
+				{
+					header: 'Роль',
+					className: styles.colFit,
+					render: (i: GroupMember) => i.role,
+				},
+			]
 		default:
 			return []
 	}
@@ -220,6 +229,13 @@ export function List<T extends AnyItem>({
 	autoNavigate = false,
 }: ListProps<T>) {
 	const navigate = useNavigate()
+
+	// Normalize project status coming as on_hold from backend to paused (frontend naming)
+	if (variant === 'projects') {
+		items = items.map((it: any) =>
+			it.status === 'on_hold' ? { ...it, status: 'paused' } : it
+		) as any
+	}
 
 	const handleItemClick = (item: AnyItem) => {
 		if (onItemClick) {
