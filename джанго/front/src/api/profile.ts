@@ -1,5 +1,14 @@
 import type { UserPublic } from '../types/auth'
 import type {
+	GroupDetail,
+	GroupMemberDetail,
+	GroupProject,
+	NewGroupArticleInput,
+	NewGroupProjectInput,
+	UpdateGroupArticleInput,
+	UpdateGroupProjectInput,
+} from '../types/group'
+import type {
 	GroupMember,
 	NewArticleInput,
 	NewGroupInput,
@@ -89,6 +98,30 @@ let groupMembers: Record<number, number[]> = {
 	2: [2, 1, 3],
 }
 
+// Group articles (per group) store only article ids referencing global articles for simplicity.
+// For group-only articles we will create separate entries (still in articles array) flagged by group mapping.
+let groupArticles: Record<number, number[]> = {
+	1: [1], // group 1 includes article 1
+	2: [2],
+}
+
+// Simple in-memory projects storage
+let groupProjects: Record<number, GroupProject[]> = {
+	1: [
+		{
+			id: 1,
+			title: 'Система анализа данных',
+			status: 'in_progress',
+			start_date: '2025-01-10',
+			supervisor_id: 1,
+			supervisor_name: 'Иван Иванов',
+			can_edit: true,
+		},
+	],
+	2: [],
+}
+let nextProjectId = 2
+
 function buildMembersArray(groupId: number): GroupMember[] {
 	const memberIds = groupMembers[groupId] || []
 	return memberIds.map((id, idx) => {
@@ -121,6 +154,150 @@ function computeGroupsForUser(userId: number): ProfileGroup[] {
 		}
 	}
 	return res
+}
+
+function buildGroupDetail(
+	groupId: number,
+	currentUserId: number
+): GroupDetail | null {
+	const base = groups.find(g => g.id === groupId)
+	if (!base) return null
+	const membersIds = groupMembers[groupId] || []
+	const leader = membersIds[0]
+	const members: GroupMemberDetail[] = buildMembersArray(groupId).map(m => ({
+		id: m.id,
+		full_name: m.full_name,
+		is_leader: m.is_leader,
+	}))
+	const articlesForGroup: ProfileArticle[] = (groupArticles[groupId] || [])
+		.map(aid => articles.find(a => a.id === aid))
+		.filter(Boolean)
+		.map(a => ({
+			...a!,
+			can_edit: a!.authors.some(au => au.id === currentUserId),
+		}))
+	const projects: GroupProject[] = (groupProjects[groupId] || []).map(p => ({
+		...p,
+		can_edit: leader === currentUserId,
+	}))
+	return {
+		id: base.id,
+		name: base.name,
+		description: base.description,
+		leader_id: base.leader_id ?? leader,
+		leader_name: base.leader_name,
+		members,
+		articles: articlesForGroup,
+		projects,
+		members_count: membersIds.length,
+		can_manage: leader === currentUserId,
+		is_member: membersIds.includes(currentUserId),
+		is_leader: leader === currentUserId,
+	}
+}
+
+export async function getGroupDetail(
+	groupId: number,
+	currentUserId: number
+): Promise<GroupDetail | null> {
+	await delay()
+	return buildGroupDetail(groupId, currentUserId)
+}
+
+export async function addGroupArticle(
+	groupId: number,
+	currentUserId: number,
+	input: NewGroupArticleInput
+): Promise<ProfileArticle> {
+	await delay()
+	const art = await createArticle(currentUserId, input)
+	groupArticles[groupId] = groupArticles[groupId] || []
+	groupArticles[groupId].unshift(art.id)
+	return art
+}
+
+export async function updateGroupArticle(
+	groupId: number,
+	articleId: number,
+	currentUserId: number,
+	patch: UpdateGroupArticleInput
+): Promise<ProfileArticle> {
+	await delay()
+	// Ensure user is member of the group for editing context (light check)
+	const members = groupMembers[groupId] || []
+	if (!members.includes(currentUserId)) throw new Error('Нет прав')
+	const upd = await updateArticle(articleId, currentUserId, patch)
+	return upd
+}
+
+export async function deleteGroupArticle(
+	groupId: number,
+	articleId: number,
+	currentUserId: number
+): Promise<void> {
+	await delay()
+	await deleteArticle(articleId, currentUserId)
+	groupArticles[groupId] = (groupArticles[groupId] || []).filter(
+		id => id !== articleId
+	)
+}
+
+export async function createGroupProject(
+	groupId: number,
+	currentUserId: number,
+	input: NewGroupProjectInput
+): Promise<GroupProject> {
+	await delay()
+	const leader = groupMembers[groupId]?.[0]
+	if (leader !== currentUserId) throw new Error('Нет прав')
+	const project: GroupProject = {
+		id: nextProjectId++,
+		title: input.title.trim(),
+		description: input.description?.trim() || undefined,
+		status: input.status || 'planned',
+		start_date: input.start_date,
+		end_date: input.end_date,
+		supervisor_id: currentUserId,
+		supervisor_name: users.find(u => u.id === currentUserId)?.full_name,
+		can_edit: true,
+	}
+	groupProjects[groupId] = groupProjects[groupId] || []
+	groupProjects[groupId].unshift(project)
+	return project
+}
+
+export async function updateGroupProject(
+	groupId: number,
+	projectId: number,
+	currentUserId: number,
+	patch: UpdateGroupProjectInput
+): Promise<GroupProject> {
+	await delay()
+	const arr = groupProjects[groupId] || []
+	const idx = arr.findIndex(p => p.id === projectId)
+	if (idx === -1) throw new Error('Project not found')
+	const leader = groupMembers[groupId]?.[0]
+	if (leader !== currentUserId) throw new Error('Нет прав')
+	if (patch.title !== undefined) arr[idx].title = patch.title.trim()
+	if (patch.description !== undefined)
+		arr[idx].description = patch.description.trim() || undefined
+	if (patch.status !== undefined) arr[idx].status = patch.status
+	if (patch.start_date !== undefined) arr[idx].start_date = patch.start_date
+	if (patch.end_date !== undefined) arr[idx].end_date = patch.end_date
+	return { ...arr[idx], can_edit: true }
+}
+
+export async function deleteGroupProject(
+	groupId: number,
+	projectId: number,
+	currentUserId: number
+): Promise<void> {
+	await delay()
+	const leader = groupMembers[groupId]?.[0]
+	if (leader !== currentUserId) throw new Error('Нет прав')
+	groupProjects[groupId] = (groupProjects[groupId] || []).filter(
+		p => p.id !== projectId
+	)
 }
 
 function computeArticlesForUser(userId: number): ProfileArticle[] {
@@ -360,5 +537,12 @@ function delay(ms = 250) {
 // change leader also via PATCH /groups/{id}/ with leader_id
 // addGroupMember -> POST /groups/{id}/add_member/ { user_id }
 // removeGroupMember -> POST /groups/{id}/remove_member/ { user_id }
+// getGroupDetail -> GET /groups/{id}/detail/ (members, articles, projects)
+// addGroupArticle -> POST /groups/{id}/articles/
+// updateGroupArticle -> PATCH /groups/{id}/articles/{article_id}/
+// deleteGroupArticle -> DELETE /groups/{id}/articles/{article_id}/
+// createGroupProject -> POST /groups/{id}/projects/
+// updateGroupProject -> PATCH /groups/{id}/projects/{project_id}/
+// deleteGroupProject -> DELETE /groups/{id}/projects/{project_id}/
 
 void getAccessToken // placeholder for future auth header usage
