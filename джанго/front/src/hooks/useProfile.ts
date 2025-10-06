@@ -56,6 +56,7 @@ export function useProfile(userId: number) {
 			setSaving(true)
 			try {
 				// sanitize fields not accepted by backend mock (null -> undefined)
+				// avatar (data URL) can be passed through directly in patch.avatar
 				const backendPatch: any = { ...patch }
 				if (backendPatch.phone === null) delete backendPatch.phone
 				const updated = await updateProfile(profile.id, backendPatch)

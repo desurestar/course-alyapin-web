@@ -21,6 +21,7 @@ export interface ProfileGroup {
 export interface ProfileDetail extends UserPublic {
 	position?: string
 	bio?: string
+	avatar?: string // data URL or remote path
 	articles: ProfileArticle[]
 	groups: ProfileGroup[]
 	stats?: { articles: number; groups: number }

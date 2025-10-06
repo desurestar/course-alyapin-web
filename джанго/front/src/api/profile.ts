@@ -9,7 +9,12 @@ import type {
 import { getAccessToken } from './http'
 
 // In-memory mock state (replace with real API later)
-let users: UserPublic[] = [
+// Added optional avatar property (data URL) to user objects for mock purposes.
+interface MockUser extends UserPublic {
+	avatar?: string
+}
+
+let users: MockUser[] = [
 	{
 		id: 1,
 		first_name: 'Иван',
@@ -17,6 +22,7 @@ let users: UserPublic[] = [
 		email: 'ivan@example.com',
 		full_name: 'Иван Иванов',
 		phone: '+79990000001',
+		avatar: undefined,
 	},
 	{
 		id: 2,
@@ -25,6 +31,7 @@ let users: UserPublic[] = [
 		email: 'petr@example.com',
 		full_name: 'Пётр Петров',
 		phone: '+79990000002',
+		avatar: undefined,
 	},
 	{
 		id: 3,
@@ -33,6 +40,7 @@ let users: UserPublic[] = [
 		email: 'anna@example.com',
 		full_name: 'Анна Сидорова',
 		phone: '+79990000003',
+		avatar: undefined,
 	},
 ]
 
@@ -114,9 +122,14 @@ export async function getProfileDetail(
 export async function updateProfile(
 	userId: number,
 	patch: Partial<
-		UserPublic & { position?: string; bio?: string; phone?: string }
+		MockUser & {
+			position?: string
+			bio?: string
+			phone?: string
+			avatar?: string
+		}
 	>
-): Promise<UserPublic> {
+): Promise<MockUser> {
 	await delay()
 	const idx = users.findIndex(u => u.id === userId)
 	if (idx === -1) throw new Error('User not found')

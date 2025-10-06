@@ -9,6 +9,16 @@ import type {
 import { getAccessToken } from './http'
 
 // In-memory mock store (replace with real HTTP calls later)
+// BACKEND ENDPOINT PLANNING:
+// 1) GET /departments/                -> listDepartments
+// 2) POST /departments/               -> createDepartment
+// 3) PUT/PATCH /departments/{id}/     -> updateDepartment
+// 4) DELETE /departments/{id}/        -> deleteDepartment
+// 5) GET /departments/{id}/           -> getDepartment (basic)
+// 6) GET /departments/{id}/detail/    -> getDepartmentDetail (if server splits rich info)
+// 7) GET /departments/{id}/employees/ -> listDepartmentEmployees
+// 8) GET /departments/{id}/groups/    -> listDepartmentGroups
+// For efficiency backend may embed employees & groups into detail to reduce round-trips.
 let _departments: Department[] = [
 	{
 		id: 1,
@@ -135,8 +145,8 @@ export async function getDepartmentDetail(
 	if (!base) return null
 	return {
 		...structuredClone(base),
-		employees: structuredClone(_deptEmployees[id] || []),
-		groups: structuredClone(_deptGroups[id] || []),
+		employees: structuredClone(_deptEmployees[id] || []), // consider calling listDepartmentEmployees
+		groups: structuredClone(_deptGroups[id] || []), // consider calling listDepartmentGroups
 		info: {
 			department_id: id,
 			history: 'История кафедры (mock)',
@@ -148,6 +158,16 @@ export async function getDepartmentDetail(
 			contacts: 'Контакты (mock)',
 		},
 	}
+}
+
+export async function listDepartmentEmployees(departmentId: number) {
+	await delay()
+	return structuredClone(_deptEmployees[departmentId] || [])
+}
+
+export async function listDepartmentGroups(departmentId: number) {
+	await delay()
+	return structuredClone(_deptGroups[departmentId] || [])
 }
 
 function delay(ms = 200) {

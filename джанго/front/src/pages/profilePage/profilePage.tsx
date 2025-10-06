@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import type { ChangeEvent } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useProfile } from '../../hooks/useProfile'
 import type { NewArticleInput, NewGroupInput } from '../../types/profile'
@@ -39,7 +40,9 @@ export const ProfilePage = () => {
 		position?: string
 		phone?: string | null
 		bio?: string
+		avatar?: string
 	}>({})
+	const fileInputRef = useRef<HTMLInputElement | null>(null)
 	const [formError, setFormError] = useState<string | null>(null)
 	const [formSuccess, setFormSuccess] = useState<string | null>(null)
 
@@ -51,6 +54,7 @@ export const ProfilePage = () => {
 				position: profile.position,
 				phone: profile.phone ?? '',
 				bio: profile.bio,
+				avatar: profile.avatar,
 			})
 			setEditMode(true)
 		}
@@ -69,6 +73,24 @@ export const ProfilePage = () => {
 		} catch (e: any) {
 			setFormError(e.message || 'Ошибка')
 		}
+	}
+
+	function onAvatarChange(e: ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[1] || e.target.files?.[0]
+		if (!file) return
+		if (!file.type.startsWith('image/')) {
+			setFormError('Можно загружать только изображения')
+			return
+		}
+		const reader = new FileReader()
+		reader.onload = () => {
+			setLocal(v => ({ ...v, avatar: reader.result as string }))
+		}
+		reader.readAsDataURL(file)
+	}
+
+	const removeAvatar = () => {
+		setLocal(v => ({ ...v, avatar: undefined }))
 	}
 
 	const openArticleModal = () => {
@@ -123,6 +145,66 @@ export const ProfilePage = () => {
 						<button className={styles.smallBtn} onClick={() => navigate(-1)}>
 							Назад
 						</button>
+					</div>
+					<div className={styles.avatarBlock}>
+						<div className={styles.avatarWrapper}>
+							{editMode && isOwner && (
+								<button
+									type='button'
+									className={styles.avatarEditBtn}
+									onClick={() => fileInputRef.current?.click()}
+								>
+									Изменить
+								</button>
+							)}
+							{profile.avatar || local.avatar ? (
+								<img
+									className={styles.avatar}
+									src={
+										editMode ? local.avatar || profile.avatar : profile.avatar
+									}
+									alt={profile.full_name || 'avatar'}
+								/>
+							) : (
+								<div className={styles.avatarFallback}>
+									{(
+										profile.full_name ||
+										profile.first_name + ' ' + profile.last_name
+									)
+										.split(' ')
+										.map(p => p[0])
+										.slice(0, 2)
+										.join('')}
+								</div>
+							)}
+						</div>
+						{editMode && isOwner && (
+							<div className={styles.avatarActions}>
+								<input
+									ref={fileInputRef}
+									style={{ display: 'none' }}
+									accept='image/*'
+									type='file'
+									onChange={onAvatarChange}
+								/>
+								<button
+									className={styles.smallBtn}
+									type='button'
+									onClick={() => fileInputRef.current?.click()}
+								>
+									Загрузить
+								</button>
+								{(local.avatar || profile.avatar) && (
+									<button
+										type='button'
+										className={`${styles.smallBtn} ${styles.danger}`}
+										onClick={removeAvatar}
+									>
+										Удалить
+									</button>
+								)}
+							</div>
+						)}
 					</div>
 					{!editMode && (
 						<div>
@@ -423,3 +505,7 @@ export const ProfilePage = () => {
 // - Replace useProfile internals to call real endpoints (see api/profile.ts comments)
 // - For candidates: implement search input and debounce calling /users/?search=...
 // - Add deletion or edit of articles/groups when backend supports ownership & permissions
+// - Avatar upload (future): use multipart/form-data PATCH /users/{id}/ (field name 'avatar') OR
+//   upload to /files/ -> receive URL -> PATCH /users/{id}/ { avatar: url }.
+// - Server should validate content-type (image/*), size, optionally generate thumbnails.
+// - Current mock stores data URL (base64). Replace with real URL when backend ready.
