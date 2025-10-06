@@ -1,15 +1,12 @@
-from django.contrib.auth import get_user_model
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from .models import Department, ResearchGroup, ResearchGroupMembership
 from .permissions import ReadOnlyOrAdmin
 from .serializers import DepartmentDetailSerializer, DepartmentInfoUpsertSerializer, DepartmentSerializer, ResearchGroupDetailSerializer, ResearchGroupMembershipSerializer, ResearchGroupSerializer
 
-User = get_user_model()
 
 class DepartmentViewSet(viewsets.ModelViewSet):
     queryset = Department.objects.all().select_related('head')
@@ -74,19 +71,3 @@ class ResearchGroupViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'user_id required'}, status=400)
         ResearchGroupMembership.objects.filter(group=group, user_id=user_id).delete()
         return Response(status=204)
-
-class EmployeesListAPIView(APIView):
-    permission_classes = [AllowAny]
-    def get(self, request):
-        # Возвращаем только минимально нужные данные
-        users = User.objects.all().only('id', 'first_name', 'last_name', 'username')[:500]
-        data = [
-            {
-                'id': u.id,
-                'full_name': (f"{u.last_name or ''} {u.first_name or ''}".strip()) or u.username,
-                'first_name': u.first_name,
-                'last_name': u.last_name,
-            }
-            for u in users
-        ]
-        return Response(data)

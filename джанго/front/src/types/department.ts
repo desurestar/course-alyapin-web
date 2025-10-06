@@ -37,3 +37,44 @@ export interface EmployeeOption {
 	first_name?: string
 	last_name?: string
 }
+
+export interface DepartmentEmployee {
+	id: number
+	full_name: string
+	position?: string
+	email?: string
+	phone?: string
+}
+
+export interface ResearchGroup {
+	id: number
+	name: string
+	description?: string
+	leader_id?: number | null
+	leader_name?: string
+	members_count?: number
+}
+
+export interface DepartmentDetail extends Department {
+	info?: DepartmentInfo
+	employees: DepartmentEmployee[]
+	groups: ResearchGroup[]
+}
+
+export function buildDepartmentPayload(
+	raw: Partial<DepartmentInput>
+): DepartmentInput {
+	return {
+		name: (raw.name || '').trim(),
+		short_name: raw.short_name?.trim() || undefined,
+		code: raw.code?.trim() || undefined,
+		description: raw.description?.trim() || undefined,
+		head_id: raw.head_id ?? undefined,
+	}
+}
+
+/**
+ * Пример использования при переходе на реальный backend:
+ * const payload = buildDepartmentPayload(formState)
+ * await http('departments/', { method:'POST', body: JSON.stringify(payload), auth:true })
+ */
