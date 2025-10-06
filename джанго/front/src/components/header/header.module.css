@@ -64,9 +64,16 @@
 	height: 36px;
 	width: min(42vw, 320px);
 	padding: 0 10px;
+	/* Навигация */
+	.departmentNav,
+	.primaryNav {
+		border-top: 1px solid var(--h-border);
+		background: var(--h-bg);
+	}
 	border-radius: 10px;
 	border: 1px solid var(--h-border);
 	background: rgba(148, 163, 184, 0.06);
+	/* dropdowns removed */
 	color: var(--h-text);
 	outline: none;
 }
@@ -82,6 +89,19 @@
 	height: 36px;
 	padding: 0 12px;
 	border-radius: 10px;
+	.navLink:hover {
+		background: rgba(148, 163, 184, 0.08);
+	}
+
+	.active {
+		background: linear-gradient(
+			90deg,
+			rgba(56, 189, 248, 0.14),
+			rgba(56, 189, 248, 0.05)
+		);
+		color: #e0f2fe;
+		box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35) inset;
+	}
 	border: 1px solid var(--h-border);
 	background: rgba(148, 163, 184, 0.06);
 	color: var(--h-text);
@@ -96,6 +116,7 @@
 	width: 40px;
 	height: 40px;
 	display: inline-flex;
+	/* caret removed */
 	align-items: center;
 	justify-content: center;
 	border: 1px solid var(--h-border);
@@ -123,6 +144,7 @@
 .logoutBtn {
 	color: #f87171;
 }
+/* submenu removed */
 .logoutBtn:hover {
 	color: #fecaca;
 }
@@ -182,9 +204,7 @@
 .navItem {
 	position: relative;
 }
-.hasSub {
-	/* визуально как обычный пункт, но с caret */
-}
+/* removed old .hasSub */
 
 .navLink,
 .submenuToggle {
@@ -202,20 +222,7 @@
 	background: rgba(148, 163, 184, 0.08);
 }
 
-.caret {
-	display: inline-block;
-	width: 6px;
-	height: 6px;
-	border-right: 2px solid var(--h-muted);
-	border-bottom: 2px solid var(--h-muted);
-	transform: rotate(45deg);
-	margin-top: -2px;
-	transition: transform 0.15s ease;
-}
-.caretOpen {
-	transform: rotate(-135deg);
-	margin-top: 2px;
-}
+/* caret styles deleted */
 
 /* Выпадающее меню (desktop) */
 .submenu {
@@ -232,8 +239,7 @@
 	display: none;
 	z-index: 1001;
 }
-.submenuItem {
-}
+/* removed submenu item */
 .submenuLink {
 	display: block;
 	padding: 8px 10px;
