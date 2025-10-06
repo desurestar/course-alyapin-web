@@ -11,7 +11,7 @@ export const HomePage: React.FC = () => {
 		id: d.id,
 		name: d.name,
 		headName: d.head ? d.head.first_name : '—',
-		phone: d.code || '—',
+		phone: '—', // убран вывод телефона кафедры (код тоже скрыт)
 	}))
 	departments.map(d => console.log(d))
 

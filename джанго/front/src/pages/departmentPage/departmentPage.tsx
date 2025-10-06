@@ -59,10 +59,6 @@ export const DepartmentPage: React.FC = () => {
 						<span className={styles.muted}>Заведующий: </span>
 						{department.head?.full_name || '—'}
 					</div>
-					<div>
-						<span className={styles.muted}>Код: </span>
-						{department.code || '—'}
-					</div>
 				</div>
 				{department.info && (
 					<div className={styles.infoBlocks}>

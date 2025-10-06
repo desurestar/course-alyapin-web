@@ -1,0 +1,124 @@
+.page {
+	padding: 32px;
+}
+.title {
+	font-size: 28px;
+	margin: 0 0 12px;
+}
+.error {
+	color: #ff6b6b;
+	margin-bottom: 12px;
+}
+.table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 16px;
+}
+.table th,
+.table td {
+	padding: 6px 8px;
+	border-bottom: 1px solid #2b3b4f;
+	text-align: left;
+	font-size: 14px;
+}
+.table th {
+	background: #1e2a38;
+	font-weight: 600;
+}
+.row {
+	transition: background 0.15s;
+}
+.row:hover {
+	background: #182331;
+}
+.idCell {
+	font-size: 12px;
+	opacity: 0.7;
+}
+.descCell {
+	max-width: 360px;
+}
+.countCell {
+	text-align: center;
+}
+.actionsCell {
+	display: flex;
+	gap: 8px;
+}
+.btnSm {
+	background: #1e3a8a;
+	color: #e2e8f0;
+	border: 1px solid #334155;
+	padding: 4px 10px;
+	font-size: 12px;
+	border-radius: 6px;
+	cursor: pointer;
+	line-height: 1.2;
+}
+.btnSm:hover {
+	background: #274dba;
+}
+.btnDanger {
+	background: #7f1d1d;
+}
+.btnDanger:hover {
+	background: #a62828;
+}
+.form {
+	margin-top: 24px;
+	max-width: 520px;
+	display: grid;
+	gap: 12px;
+}
+.formTitle {
+	margin: 0;
+	font-size: 20px;
+}
+.label {
+	display: grid;
+	gap: 4px;
+	font-size: 13px;
+}
+.input,
+.textarea {
+	width: 100%;
+	background: rgba(148, 163, 184, 0.06);
+	border: 1px solid #334155;
+	border-radius: 8px;
+	padding: 8px 10px;
+	color: #e2e8f0;
+	font-size: 14px;
+	outline: none;
+}
+.textarea {
+	min-height: 90px;
+	resize: vertical;
+}
+.btnPrimary {
+	background: #075985;
+	color: #e2e8f0;
+	border: 1px solid #334155;
+	padding: 8px 16px;
+	font-size: 14px;
+	border-radius: 6px;
+	cursor: pointer;
+}
+.btnPrimary:hover:not(:disabled) {
+	background: #0d6ea3;
+}
+.btnGhost {
+	background: transparent;
+	color: #e2e8f0;
+	border: 1px solid #334155;
+	padding: 8px 16px;
+	font-size: 14px;
+	border-radius: 6px;
+	cursor: pointer;
+}
+.btnGhost:hover {
+	background: #1e2a38;
+}
+.buttons {
+	display: flex;
+	gap: 12px;
+}
