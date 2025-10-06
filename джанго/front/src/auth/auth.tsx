@@ -1,69 +1,163 @@
 import {
 	createContext,
+	useCallback,
 	useContext,
 	useEffect,
-	useMemo,
+	useRef,
 	useState,
-	type ReactElement,
 	type ReactNode,
 } from 'react'
-import { Navigate, useLocation } from 'react-router-dom'
+import { apiLogin, apiLogout, apiMe, apiRegister } from '../api/auth'
+import {
+	attemptRefresh,
+	getAccessToken,
+	parseJwtExp,
+	setAccessToken,
+} from '../api/http'
+import type { AuthContextValue, UserPublic } from '../types/auth'
 
-type AuthContextType = {
-	authed: boolean
-	userId: number | null
-	login: (userId: number) => void
-	logout: () => void
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-	const [authed, setAuthed] = useState<boolean>(
-		() => localStorage.getItem('auth') === '1'
-	)
-	const [userId, setUserId] = useState<number | null>(() => {
-		const raw = localStorage.getItem('userId')
-		return raw ? Number(raw) : null
-	})
+	const [user, setUser] = useState<UserPublic | null>(null)
+	const [loading, setLoading] = useState(true)
+	const [error, setError] = useState<string | null>(null)
+	const refreshTimer = useRef<number | null>(null)
+
+	const scheduleRefresh = useCallback((access?: string | null) => {
+		if (refreshTimer.current) window.clearTimeout(refreshTimer.current)
+		const token = access ?? getAccessToken()
+		if (!token) return
+		const exp = parseJwtExp(token)
+		if (!exp) return
+		const msUntil = exp * 1000 - Date.now() - 30_000 // 30s before expiry
+		if (msUntil <= 0) {
+			void doRefresh()
+			return
+		}
+		refreshTimer.current = window.setTimeout(() => {
+			void doRefresh()
+		}, msUntil)
+	}, [])
+
+	const bootstrap = useCallback(async () => {
+		try {
+			// Try refresh to get access token silently
+			await attemptRefresh()
+			if (getAccessToken()) {
+				const me = await apiMe()
+				setUser(me)
+				scheduleRefresh()
+			}
+		} catch (e: any) {
+			console.warn('Auth bootstrap failed', e)
+		} finally {
+			setLoading(false)
+		}
+	}, [scheduleRefresh])
 
 	useEffect(() => {
-		localStorage.setItem('auth', authed ? '1' : '0')
-	}, [authed])
-	useEffect(() => {
-		if (userId == null) localStorage.removeItem('userId')
-		else localStorage.setItem('userId', String(userId))
-	}, [userId])
-
-	const value = useMemo(
-		() => ({
-			authed,
-			userId,
-			login: (id: number) => {
-				setUserId(id)
-				setAuthed(true)
-			},
-			logout: () => {
-				setAuthed(false)
-				setUserId(null)
-			},
-		}),
-		[authed, userId]
+		bootstrap()
+	}, [bootstrap])
+	useEffect(
+		() => () => {
+			if (refreshTimer.current) window.clearTimeout(refreshTimer.current)
+		},
+		[]
 	)
+
+	const doLogin = useCallback(
+		async (payload: { email?: string; phone?: string; password: string }) => {
+			setError(null)
+			setLoading(true)
+			try {
+				const { user, access } = await apiLogin(payload as any)
+				setUser(user)
+				scheduleRefresh(access)
+			} catch (e: any) {
+				setError(e.message || 'Не удалось войти')
+				throw e
+			} finally {
+				setLoading(false)
+			}
+		},
+		[scheduleRefresh]
+	)
+
+	const doRegister = useCallback(
+		async (payload: {
+			full_name: string
+			email?: string
+			phone?: string
+			password: string
+		}) => {
+			setError(null)
+			setLoading(true)
+			try {
+				const { user, access } = await apiRegister(payload as any)
+				setUser(user)
+				scheduleRefresh(access)
+			} catch (e: any) {
+				setError(e.message || 'Не удалось зарегистрироваться')
+				throw e
+			} finally {
+				setLoading(false)
+			}
+		},
+		[scheduleRefresh]
+	)
+
+	const doLogout = useCallback(async () => {
+		setLoading(true)
+		try {
+			await apiLogout()
+		} finally {
+			setUser(null)
+			setAccessToken(null)
+			if (refreshTimer.current) window.clearTimeout(refreshTimer.current)
+			setLoading(false)
+		}
+	}, [])
+
+	const doRefresh = useCallback(async () => {
+		try {
+			const ok = await attemptRefresh()
+			if (ok) {
+				scheduleRefresh()
+				if (!user) {
+					const me = await apiMe()
+					setUser(me)
+				}
+			} else {
+				// refresh failed -> logout state only
+				setUser(null)
+				setAccessToken(null)
+			}
+		} catch (e) {
+			setUser(null)
+			setAccessToken(null)
+		}
+	}, [scheduleRefresh, user])
+
+	const value: AuthContextValue = {
+		user,
+		loading,
+		error,
+		loggedIn: !!user,
+		loginEmail: async (email, password) => doLogin({ email, password }),
+		loginPhone: async (phone, password) => doLogin({ phone, password }),
+		register: doRegister,
+		logout: doLogout,
+		refresh: async () => {
+			await doRefresh()
+		},
+	}
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextValue {
 	const ctx = useContext(AuthContext)
 	if (!ctx) throw new Error('useAuth must be used within AuthProvider')
 	return ctx
-}
-
-export function RequireAuth({ children }: { children: ReactElement }) {
-	const { authed } = useAuth()
-	const location = useLocation()
-	if (!authed)
-		return <Navigate to='/login' replace state={{ from: location }} />
-	return children
 }

@@ -9,7 +9,13 @@ type Method = 'email' | 'phone'
 export const LoginPage: React.FC = () => {
 	const navigate = useNavigate()
 	const location = useLocation()
-	const { login } = useAuth()
+	const {
+		loginEmail,
+		loginPhone,
+		register,
+		error: authError,
+		loading,
+	} = useAuth()
 
 	const [mode, setMode] = useState<Mode>('register')
 	const [method, setMethod] = useState<Method>('email')
@@ -21,7 +27,7 @@ export const LoginPage: React.FC = () => {
 	const [confirm, setConfirm] = useState('')
 	const [error, setError] = useState<string | null>(null)
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
 		setError(null)
 
@@ -36,7 +42,7 @@ export const LoginPage: React.FC = () => {
 			}
 		} else {
 			const clean = phone.replace(/\s|[()-]/g, '')
-			if (!clean.trim() || !/^\+?\d{10,15}$/.test(clean)) {
+			if (!clean.trim() || /^\+?\d{10,15}$/.test(clean) === false) {
 				setError('Введите телефон в формате +79990000000')
 				return
 			}
@@ -50,10 +56,25 @@ export const LoginPage: React.FC = () => {
 			return
 		}
 
-		// Успешная "аутентификация": пробный userId = 1
-		login(1)
-		const from = (location.state as any)?.from?.pathname || '/'
-		navigate(from, { replace: true })
+		try {
+			if (mode === 'login') {
+				if (method === 'email') await loginEmail(email.trim(), password)
+				else await loginPhone(phone.replace(/\s|[()-]/g, ''), password)
+			} else {
+				await register({
+					full_name: fullName.trim(),
+					email: method === 'email' ? email.trim() : undefined,
+					phone:
+						method === 'phone' ? phone.replace(/\s|[()-]/g, '') : undefined,
+					password,
+				})
+			}
+			const from = (location.state as any)?.from?.pathname || '/'
+			navigate(from, { replace: true })
+		} catch (e: any) {
+			// error already set by context, local fallback
+			if (!error) setError(e.message || 'Ошибка')
+		}
 	}
 
 	const handleCantSignIn = () => {
@@ -68,6 +89,7 @@ export const LoginPage: React.FC = () => {
 						type='button'
 						className={`${styles.tab} ${mode === 'login' ? styles.active : ''}`}
 						onClick={() => setMode('login')}
+						disabled={loading}
 					>
 						Вход
 					</button>
@@ -77,6 +99,7 @@ export const LoginPage: React.FC = () => {
 							mode === 'register' ? styles.active : ''
 						}`}
 						onClick={() => setMode('register')}
+						disabled={loading}
 					>
 						Регистрация
 					</button>
@@ -91,6 +114,7 @@ export const LoginPage: React.FC = () => {
 								name='method'
 								checked={method === 'email'}
 								onChange={() => setMethod('email')}
+								disabled={loading}
 							/>
 							По почте
 						</label>
@@ -100,6 +124,7 @@ export const LoginPage: React.FC = () => {
 								name='method'
 								checked={method === 'phone'}
 								onChange={() => setMethod('phone')}
+								disabled={loading}
 							/>
 							По телефону
 						</label>
@@ -115,6 +140,7 @@ export const LoginPage: React.FC = () => {
 								value={fullName}
 								onChange={e => setFullName(e.target.value)}
 								autoComplete='name'
+								disabled={loading}
 							/>
 						</div>
 					)}
@@ -129,6 +155,7 @@ export const LoginPage: React.FC = () => {
 								value={email}
 								onChange={e => setEmail(e.target.value)}
 								autoComplete='email'
+								disabled={loading}
 							/>
 						</div>
 					) : (
@@ -142,6 +169,7 @@ export const LoginPage: React.FC = () => {
 								value={phone}
 								onChange={e => setPhone(e.target.value)}
 								autoComplete='tel'
+								disabled={loading}
 							/>
 						</div>
 					)}
@@ -157,6 +185,7 @@ export const LoginPage: React.FC = () => {
 							autoComplete={
 								mode === 'register' ? 'new-password' : 'current-password'
 							}
+							disabled={loading}
 						/>
 					</div>
 
@@ -170,20 +199,28 @@ export const LoginPage: React.FC = () => {
 								value={confirm}
 								onChange={e => setConfirm(e.target.value)}
 								autoComplete='new-password'
+								disabled={loading}
 							/>
 						</div>
 					)}
 
-					{error && <div className={styles.error}>{error}</div>}
+					{(error || authError) && (
+						<div className={styles.error}>{error || authError}</div>
+					)}
 
 					<div className={styles.actions}>
-						<button type='submit' className={styles.submit}>
-							{mode === 'register' ? 'Зарегистрироваться' : 'Войти'}
+						<button type='submit' className={styles.submit} disabled={loading}>
+							{loading
+								? 'Подождите...'
+								: mode === 'register'
+								? 'Зарегистрироваться'
+								: 'Войти'}
 						</button>
 						<button
 							type='button'
 							className={styles.linkBtn}
 							onClick={handleCantSignIn}
+							disabled={loading}
 						>
 							Не можете войти?
 						</button>
