@@ -20,5 +20,8 @@ from django.urls import include, path
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('user.urls')),
+    # academic domain (departments, research groups base CRUD)
     path('api/', include('academic.urls')),
+    # research domain (articles, profile aggregation, group detail/articles/projects)
+    path('api/', include('research.urls')),
 ]

@@ -83,11 +83,11 @@ class ResearchGroupMembership(TimeStamped):
 
 
 class DepartmentStaff(TimeStamped):
-    """Связь кафедры и сотрудника с указанием должности (для вывода сотрудников кафедры).
+    '''Связь кафедры и сотрудника с указанием должности (для вывода сотрудников кафедры).
 
     Frontend ожидает список employees с полями id, full_name, position, email, phone.
     email/phone можно получить из User, а должность храним отдельно.
-    """
+    '''
     department = models.ForeignKey(
         Department, on_delete=models.CASCADE, related_name='staff'
     )

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Department, DepartmentInfo, ResearchGroup, ResearchGroupMembership, DepartmentStaff
+from .models import Department, DepartmentInfo, DepartmentStaff, ResearchGroup, ResearchGroupMembership
 
 
 class DepartmentStaffInline(admin.TabularInline):

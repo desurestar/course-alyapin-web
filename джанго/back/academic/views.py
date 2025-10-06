@@ -1,20 +1,12 @@
 from django.contrib.auth import get_user_model
-from rest_framework import generics, status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from .models import Department, ResearchGroup, ResearchGroupMembership, DepartmentStaff
+from .models import Department, DepartmentStaff, ResearchGroup, ResearchGroupMembership
 from .permissions import ReadOnlyOrAdmin
-from .serializers import (
-    DepartmentDetailSerializer,
-    DepartmentInfoUpsertSerializer,
-    DepartmentSerializer,
-    ResearchGroupDetailSerializer,
-    ResearchGroupMembershipSerializer,
-    ResearchGroupSerializer,
-    DepartmentStaffSerializer,
-)
+from .serializers import DepartmentDetailSerializer, DepartmentInfoUpsertSerializer, DepartmentSerializer, DepartmentStaffSerializer, ResearchGroupDetailSerializer, ResearchGroupMembershipSerializer, ResearchGroupSerializer
 
 User = get_user_model()
 

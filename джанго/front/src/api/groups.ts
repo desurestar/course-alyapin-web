@@ -1,8 +1,7 @@
 import type { GroupMember, ProfileGroup } from '../types/profile'
-import { API_USE_MOCK } from './config'
 import { http } from './http'
 
-const USE_MOCK = API_USE_MOCK
+const USE_MOCK = false
 let mock: any = null
 async function loadMock() {
 	if (!mock) mock = await import('./profile')
