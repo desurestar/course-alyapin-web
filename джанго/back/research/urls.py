@@ -13,6 +13,8 @@ urlpatterns = [
     path('users/<int:user_id>/groups/', UserGroupsListView.as_view(), name='user-groups'),
     # group detail (RESTful)
     path('groups/<int:id>/', GroupDetailView.as_view(), name='group-detail'),
+    # Frontend expects GET /groups/<id>/detail/ for group detail (see groupDetail.ts)
+    path('groups/<int:id>/detail/', GroupDetailView.as_view(), name='group-detail-alt'),
     path('groups/', GroupListCreateView.as_view(), name='group-create'),
     # group articles
     path('groups/<int:group_id>/articles/', GroupArticleView.as_view(), name='group-article-create'),

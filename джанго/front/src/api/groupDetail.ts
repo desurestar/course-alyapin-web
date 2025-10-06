@@ -7,7 +7,6 @@ import type {
 	UpdateGroupProjectInput,
 } from '../types/group'
 import type { ProfileArticle } from '../types/profile'
-import { API_USE_MOCK } from './config'
 import { http } from './http'
 
 // Backend endpoints mapping (intended):
@@ -29,7 +28,7 @@ async function m() {
 	if (!mock) mock = await import('./profile')
 	return mock
 }
-const USE_MOCK = API_USE_MOCK
+const USE_MOCK = false
 
 export async function getGroupDetailApi(
 	groupId: number,

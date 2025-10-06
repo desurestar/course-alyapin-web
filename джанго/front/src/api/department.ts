@@ -4,16 +4,19 @@ import type {
 	DepartmentInput,
 	EmployeeOption,
 } from '../types/department'
-import { API_USE_MOCK } from './config'
 import { http } from './http'
 // Lazy mock imports to avoid bundling when not needed
 let mock: any
+
 async function ensureMock() {
 	if (!mock) {
 		mock = await import('./departments.mockState')
 	}
 	return mock
 }
+
+const USE_MOCK = false
+// const USE_MOCK = API_USE_MOCK
 
 // =============================
 // Department & Staff API (real backend)
@@ -33,7 +36,7 @@ async function ensureMock() {
 
 /** Список кафедр (без detail-полей). */
 export async function listDepartments(): Promise<Department[]> {
-	if (API_USE_MOCK) {
+	if (USE_MOCK) {
 		const m = await ensureMock()
 		return m.msListDepartments()
 	}
@@ -44,7 +47,7 @@ export async function listDepartments(): Promise<Department[]> {
 export async function createDepartment(
 	data: DepartmentInput
 ): Promise<Department> {
-	if (API_USE_MOCK) {
+	if (USE_MOCK) {
 		const m = await ensureMock()
 		return m.msCreateDepartment(data)
 	}
@@ -60,7 +63,7 @@ export async function updateDepartment(
 	id: number,
 	data: Partial<DepartmentInput>
 ): Promise<Department> {
-	if (API_USE_MOCK) {
+	if (USE_MOCK) {
 		const m = await ensureMock()
 		return m.msUpdateDepartment(id, data)
 	}
@@ -73,7 +76,7 @@ export async function updateDepartment(
 
 /** Удаление кафедры. */
 export async function deleteDepartment(id: number): Promise<void> {
-	if (API_USE_MOCK) {
+	if (USE_MOCK) {
 		const m = await ensureMock()
 		m.msDeleteDepartment(id)
 		return
@@ -85,7 +88,7 @@ export async function deleteDepartment(id: number): Promise<void> {
 export async function getDepartmentDetail(
 	id: number
 ): Promise<DepartmentDetail> {
-	if (API_USE_MOCK) {
+	if (USE_MOCK) {
 		const m = await ensureMock()
 		return m.msGetDepartmentDetail(id)
 	}
@@ -106,7 +109,7 @@ export function upsertDepartmentInfo(
 
 /** Список пользователей (для выбора заведующего и сотрудников). */
 export async function listEmployees(): Promise<EmployeeOption[]> {
-	if (API_USE_MOCK) {
+	if (USE_MOCK) {
 		const m = await ensureMock()
 		return m.mockEmployees
 	}
@@ -115,7 +118,7 @@ export async function listEmployees(): Promise<EmployeeOption[]> {
 
 /** Список сотрудников конкретной кафедры (если нужен отдельно от detail). */
 export async function listDepartmentEmployees(id: number) {
-	if (API_USE_MOCK) {
+	if (USE_MOCK) {
 		const m = await ensureMock()
 		return m.msResolveDepartmentEmployees(id)
 	}
@@ -128,7 +131,7 @@ export async function addDepartmentEmployee(
 	user_id: number,
 	position?: string
 ) {
-	if (API_USE_MOCK) {
+	if (USE_MOCK) {
 		const m = await ensureMock()
 		const existing = m.msGetDepartmentEmployeeIds(departmentId)
 		m.msSetDepartmentEmployees(departmentId, [...existing, user_id])
@@ -146,7 +149,7 @@ export async function removeDepartmentEmployee(
 	departmentId: number,
 	user_id: number
 ) {
-	if (API_USE_MOCK) {
+	if (USE_MOCK) {
 		const m = await ensureMock()
 		const existing: number[] = m.msGetDepartmentEmployeeIds(departmentId)
 		m.msSetDepartmentEmployees(
@@ -164,7 +167,7 @@ export async function removeDepartmentEmployee(
 
 // Mock-only convenience to list employees not yet assigned to other departments (excluding current editing dept)
 export async function listAssignableEmployees(currentDeptId?: number) {
-	if (API_USE_MOCK) {
+	if (USE_MOCK) {
 		const m = await ensureMock()
 		return m.msListAssignableEmployees(currentDeptId)
 	}
@@ -177,7 +180,7 @@ export async function setDepartmentEmployees(
 	departmentId: number,
 	employeeIds: number[]
 ) {
-	if (API_USE_MOCK) {
+	if (USE_MOCK) {
 		const m = await ensureMock()
 		m.msSetDepartmentEmployees(departmentId, employeeIds)
 		return
