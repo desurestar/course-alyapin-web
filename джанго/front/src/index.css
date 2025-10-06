@@ -46,67 +46,28 @@ a:hover {
 
 body {
 	margin: 0;
-	display: flex;
-	place-items: center;
+	display: block;
 	min-width: 320px;
 	min-height: 100vh;
-}
-
-h1 {
-	font-size: 3.2em;
-	line-height: 1.1;
-}
-
-button {
-	border-radius: 8px;
-	border: 1px solid transparent;
-	padding: 0.6em 1.2em;
-	font-size: 1em;
-	font-weight: 500;
-	font-family: inherit;
-	background-color: #1a1a1a;
-	cursor: pointer;
-	transition: border-color 0.25s;
-}
-button:hover {
-	border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-	outline: 4px auto -webkit-focus-ring-color;
-}
-
-/* Центрирование всех страниц и единый контейнер */
-:root {
-	--container-max: 1200px;
-	--container-pad-x: 16px;
-}
-
-html,
-body,
-#root {
-	height: 100%;
-	margin: 0;
 }
 
 #root {
 	display: flex;
 	flex-direction: column;
+	min-height: 100vh;
 }
 
 /* Центральная область между header и footer */
 .siteContent {
 	flex: 1 0 auto;
-	display: flex;
-	justify-content: center;
+	display: block;
 }
 
 /* Любая страница (<main>) по центру и с единой шириной */
 .siteContent main {
 	width: 100%;
 	max-width: var(--container-max);
-	margin-left: auto;
-	margin-right: auto;
+	margin: 0 auto;
 	padding-left: var(--container-pad-x);
 	padding-right: var(--container-pad-x);
 	box-sizing: border-box;
