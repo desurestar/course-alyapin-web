@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { listAllGroups } from '../../api/groups'
 import {
 	createProject,
 	deleteProject,
@@ -6,6 +7,8 @@ import {
 	listProjects,
 	updateProject,
 } from '../../api/projects'
+// Grants API (mock + future HTTP)
+import { listGrants, type GrantSummary } from '../../api/grants'
 import type {
 	NewProjectInput,
 	ProjectDetail,
@@ -36,6 +39,12 @@ export const AdminProjectPage: React.FC = () => {
 	}>({})
 	const [selectedId, setSelectedId] = useState<number | null>(null)
 	const [edit, setEdit] = useState<EditState | null>(null)
+	const [grants, setGrants] = useState<GrantSummary[]>([])
+	const [grantsLoading, setGrantsLoading] = useState(false)
+	const [grantsError, setGrantsError] = useState<string | null>(null)
+	const [groups, setGroups] = useState<{ id: number; name: string }[]>([])
+	const [groupsError, setGroupsError] = useState<string | null>(null)
+	const [groupsLoading, setGroupsLoading] = useState(false)
 
 	async function reload() {
 		setLoading(true)
@@ -58,6 +67,35 @@ export const AdminProjectPage: React.FC = () => {
 		reload()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [filter.status, filter.search])
+
+	useEffect(() => {
+		async function loadGrants() {
+			setGrantsLoading(true)
+			setGrantsError(null)
+			try {
+				const data = await listGrants()
+				setGrants(data)
+			} catch (e: any) {
+				setGrantsError(e.message || 'Не удалось загрузить гранты')
+			} finally {
+				setGrantsLoading(false)
+			}
+		}
+		async function loadGroups() {
+			setGroupsLoading(true)
+			setGroupsError(null)
+			try {
+				const data = await listAllGroups({})
+				setGroups(data.map(g => ({ id: g.id, name: g.name })))
+			} catch (e: any) {
+				setGroupsError(e.message || 'Не удалось загрузить коллективы')
+			} finally {
+				setGroupsLoading(false)
+			}
+		}
+		loadGrants()
+		loadGroups()
+	}, [])
 
 	const selected = useMemo(
 		() => projects.find(p => p.id === selectedId) || null,
@@ -90,9 +128,6 @@ export const AdminProjectPage: React.FC = () => {
 			status: edit.data.status as ProjectStatus,
 			start_date: edit.data.start_date,
 			end_date: edit.data.end_date,
-			budget: edit.data.budget,
-			currency: edit.data.currency,
-			tags: edit.data.tags,
 			website: edit.data.website,
 			grant_id: edit.data.grant_id ?? null,
 			group_id: edit.data.group_id ?? null,
@@ -247,9 +282,7 @@ export const AdminProjectPage: React.FC = () => {
 								</a>
 							</p>
 						)}
-						{selected.tags && selected.tags.length > 0 && (
-							<p className={styles.muted}>Теги: {selected.tags.join(', ')}</p>
-						)}
+						{/* Tags removed */}
 					</div>
 				)}
 				{edit && (
@@ -304,9 +337,8 @@ export const AdminProjectPage: React.FC = () => {
 								</select>
 							</label>
 							<label className={styles.field}>
-								<span>Группа (ID)</span>
-								<input
-									type='number'
+								<span>Коллектив</span>
+								<select
 									value={edit.data.group_id ?? ''}
 									onChange={e =>
 										setEdit(
@@ -322,8 +354,23 @@ export const AdminProjectPage: React.FC = () => {
 												}
 										)
 									}
-									min={1}
-								/>
+									disabled={groupsLoading}
+								>
+									<option value=''>— не выбрано —</option>
+									{groups.map(g => (
+										<option key={g.id} value={g.id}>
+											{g.name}
+										</option>
+									))}
+								</select>
+								{groupsError && (
+									<div
+										className={styles.muted}
+										style={{ color: 'var(--adm-danger,#d33)' }}
+									>
+										{groupsError}
+									</div>
+								)}
 							</label>
 						</div>
 						<div className={styles.inline}>
@@ -366,75 +413,7 @@ export const AdminProjectPage: React.FC = () => {
 								/>
 							</label>
 						</div>
-						<div className={styles.inline}>
-							<label className={styles.field}>
-								<span>Бюджет</span>
-								<input
-									type='number'
-									value={edit.data.budget ?? ''}
-									onChange={e =>
-										setEdit(
-											s =>
-												s && {
-													...s,
-													data: {
-														...s.data,
-														budget: e.target.value
-															? Number(e.target.value)
-															: undefined,
-													},
-												}
-										)
-									}
-									min={0}
-								/>
-							</label>
-							<label className={styles.field}>
-								<span>Валюта</span>
-								<select
-									value={edit.data.currency || ''}
-									onChange={e =>
-										setEdit(
-											s =>
-												s && {
-													...s,
-													data: { ...s.data, currency: e.target.value as any },
-												}
-										)
-									}
-								>
-									<option value=''>—</option>
-									<option value='RUB'>RUB</option>
-									<option value='USD'>USD</option>
-									<option value='EUR'>EUR</option>
-								</select>
-							</label>
-						</div>
-						<label className={styles.field}>
-							<span>Теги (через запятую)</span>
-							<input
-								type='text'
-								value={edit.data.tags?.join(', ') || ''}
-								onChange={e =>
-									setEdit(
-										s =>
-											s && {
-												...s,
-												data: {
-													...s.data,
-													tags: e.target.value
-														? e.target.value
-																.split(',')
-																.map(t => t.trim())
-																.filter(Boolean)
-														: undefined,
-												},
-											}
-									)
-								}
-							/>
-							<div className={styles.tagsHelp}>Пример: NLP, Data, ML</div>
-						</label>
+						{/* Budget, currency, tags removed */}
 						<label className={styles.field}>
 							<span>Сайт</span>
 							<input
@@ -456,9 +435,8 @@ export const AdminProjectPage: React.FC = () => {
 							/>
 						</label>
 						<label className={styles.field}>
-							<span>ID гранта</span>
-							<input
-								type='number'
+							<span>Грант</span>
+							<select
 								value={edit.data.grant_id ?? ''}
 								onChange={e =>
 									setEdit(
@@ -474,8 +452,23 @@ export const AdminProjectPage: React.FC = () => {
 											}
 									)
 								}
-								min={1}
-							/>
+								disabled={grantsLoading}
+							>
+								<option value=''>— не выбрано —</option>
+								{grants.map(g => (
+									<option key={g.id} value={g.id}>
+										{g.title}
+									</option>
+								))}
+							</select>
+							{grantsError && (
+								<div
+									className={styles.muted}
+									style={{ color: 'var(--adm-danger,#d33)' }}
+								>
+									{grantsError}
+								</div>
+							)}
 						</label>
 						<label className={styles.field}>
 							<span>Описание</span>

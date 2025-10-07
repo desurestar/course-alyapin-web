@@ -27,7 +27,13 @@ const USE_MOCK = API_USE_MOCK
 let mock: any = null
 async function loadMock() {
 	if (!mock) {
-		mock = await import('./profile')
+		// Prefer dedicated mock state (profile.mockState) – fallback to legacy profile module if needed
+		try {
+			mock = await import('./profile.mockState')
+		} catch (e) {
+			// Fallback for older structure
+			mock = await import('./profile')
+		}
 	}
 	return mock
 }
@@ -35,13 +41,14 @@ async function loadMock() {
 export async function getArticle(id: number): Promise<ProfileArticle> {
 	if (USE_MOCK) {
 		const m = await loadMock()
-		// derive by scanning global articles from mock module state
 		const list = (m as any).articles as ProfileArticle[] | undefined
-		const art = list?.find(a => a.id === id)
+		if (!Array.isArray(list)) throw new Error('Mock articles not initialized')
+		const art = list.find(a => a.id === id)
 		if (!art) throw new Error('Not found')
-		return art
+		return normalizeArticle(art)
 	}
-	return http<ProfileArticle>(`/articles/${id}/`, { auth: true })
+	const data = await http<ProfileArticle>(`/articles/${id}/`, { auth: true })
+	return normalizeArticle(data)
 }
 
 export async function listUserArticles(
@@ -72,9 +79,10 @@ export async function listArticles(
 	if (USE_MOCK) {
 		const m = await loadMock()
 		const { search, author_id, page = 1, page_size = 20 } = params
-		let list: ProfileArticle[] = (m as any).articles.map(
-			(a: ProfileArticle) => ({ ...a, can_edit: true })
-		)
+		const raw = (m as any).articles as ProfileArticle[] | undefined
+		let list: ProfileArticle[] = Array.isArray(raw)
+			? raw.map(a => normalizeArticle({ ...a, can_edit: true }))
+			: []
 		if (author_id)
 			list = list.filter(a => a.authors.some(au => au.id === author_id))
 		if (search) {
@@ -94,7 +102,16 @@ export async function listArticles(
 	if (params.author_id) query.set('author_id', String(params.author_id))
 	if (params.page) query.set('page', String(params.page))
 	if (params.page_size) query.set('page_size', String(params.page_size))
-	return http(`/articles/?${query.toString()}`, { auth: true })
+	const data = await http<{
+		results: ProfileArticle[]
+		count: number
+		page: number
+		page_size: number
+	}>(`/articles/?${query.toString()}`, { auth: true })
+	return {
+		...data,
+		results: data.results.map(normalizeArticle),
+	}
 }
 
 export async function createArticleApi(
@@ -103,13 +120,14 @@ export async function createArticleApi(
 ) {
 	if (USE_MOCK) {
 		const m = await loadMock()
-		return m.createArticle(currentUserId, input)
+		return normalizeArticle(await m.createArticle(currentUserId, input))
 	}
-	return http<ProfileArticle>(`/articles/`, {
+	const created = await http<ProfileArticle>(`/articles/`, {
 		method: 'POST',
 		auth: true,
 		body: JSON.stringify(input),
 	})
+	return normalizeArticle(created)
 }
 
 export async function updateArticleApi(
@@ -118,13 +136,14 @@ export async function updateArticleApi(
 ) {
 	if (USE_MOCK) {
 		const m = await loadMock()
-		return m.updateArticle(articleId, 1, input)
+		return normalizeArticle(await m.updateArticle(articleId, 1, input))
 	}
-	return http<ProfileArticle>(`/articles/${articleId}/`, {
+	const updated = await http<ProfileArticle>(`/articles/${articleId}/`, {
 		method: 'PATCH',
 		auth: true,
 		body: JSON.stringify(input),
 	})
+	return normalizeArticle(updated)
 }
 
 export async function deleteArticleApi(articleId: number) {
@@ -133,4 +152,20 @@ export async function deleteArticleApi(articleId: number) {
 		return m.deleteArticle(articleId, 1)
 	}
 	await http(`/articles/${articleId}/`, { method: 'DELETE', auth: true })
+}
+
+// ---------------- Normalization Helper ---------------- //
+function normalizeArticle(a: any): ProfileArticle {
+	return {
+		...a,
+		authors: Array.isArray(a.authors)
+			? a.authors.filter(Boolean).map((au: any) => ({
+					id: au.id,
+					full_name:
+						au.full_name ||
+						`${au.first_name || ''} ${au.last_name || ''}`.trim(),
+			  }))
+			: [],
+		can_edit: !!a.can_edit,
+	}
 }
