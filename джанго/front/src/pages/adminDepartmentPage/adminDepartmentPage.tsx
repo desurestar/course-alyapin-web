@@ -165,7 +165,7 @@ export const AdminDepartmentPage: React.FC = () => {
 							assignable.find(e => e.id === d.head_id)?.full_name || '—'
 						const deputy =
 							assignable.find(e => e.id === d.deputy_id)?.full_name || '—'
-						const count = d.employee_ids?.length || 0
+						const count = d.employee_ids?.length ?? d.employees_count ?? 0
 						return (
 							<tr key={d.id}>
 								<td>{d.id}</td>

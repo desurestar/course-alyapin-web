@@ -83,12 +83,13 @@ class DepartmentSerializer(serializers.ModelSerializer):
         queryset=User.objects.all(), source='deputy', write_only=True, required=False
     )
     groups_count = serializers.IntegerField(source='groups.count', read_only=True)
+    employees_count = serializers.IntegerField(source='staff.count', read_only=True)
 
     class Meta:
         model = Department
         fields = (
             'id', 'name', 'short_name', 'code', 'description',
-            'head', 'head_id', 'deputy', 'deputy_id', 'groups_count'
+            'head', 'head_id', 'deputy', 'deputy_id', 'groups_count', 'employees_count'
         )
 
     def validate(self, attrs):

@@ -13,6 +13,7 @@ export interface Department {
 	deputy?: UserPublic | null
 	updated_at?: string
 	created_at?: string
+	employees_count?: number
 }
 
 export interface DepartmentInput {
