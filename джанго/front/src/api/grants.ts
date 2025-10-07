@@ -9,6 +9,28 @@ export interface GrantSummary {
 	end_date?: string
 }
 
+export interface GrantDetail extends GrantSummary {
+	description?: string
+}
+
+export interface NewGrantInput {
+	title: string
+	code?: string
+	agency?: string
+	start_date?: string
+	end_date?: string
+	description?: string
+}
+
+export interface UpdateGrantInput {
+	title?: string
+	code?: string
+	agency?: string
+	start_date?: string | null
+	end_date?: string | null
+	description?: string | null
+}
+
 const USE_MOCK = false
 
 // Simple in-memory mock dataset
