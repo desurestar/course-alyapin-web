@@ -6,6 +6,7 @@ const adminLinks = [
 	{ to: '/admin/departments', label: 'Кафедры' },
 	{ to: '/admin/groups', label: 'Группы' },
 	{ to: '/admin/projects', label: 'Проекты' },
+	{ to: '/admin/grants', label: 'Гранты' },
 	{ to: '/admin/publications', label: 'Публикации' },
 	{ to: '/admin/users', label: 'Пользователи' },
 ]
