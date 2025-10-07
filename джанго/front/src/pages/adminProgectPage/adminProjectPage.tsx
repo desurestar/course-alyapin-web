@@ -128,7 +128,6 @@ export const AdminProjectPage: React.FC = () => {
 			status: edit.data.status as ProjectStatus,
 			start_date: edit.data.start_date,
 			end_date: edit.data.end_date,
-			website: edit.data.website,
 			grant_id: edit.data.grant_id ?? null,
 			group_id: edit.data.group_id ?? null,
 		}
@@ -414,26 +413,6 @@ export const AdminProjectPage: React.FC = () => {
 							</label>
 						</div>
 						{/* Budget, currency, tags removed */}
-						<label className={styles.field}>
-							<span>Сайт</span>
-							<input
-								type='text'
-								placeholder='https://'
-								value={edit.data.website || ''}
-								onChange={e =>
-									setEdit(
-										s =>
-											s && {
-												...s,
-												data: {
-													...s.data,
-													website: e.target.value || undefined,
-												},
-											}
-									)
-								}
-							/>
-						</label>
 						<label className={styles.field}>
 							<span>Грант</span>
 							<select
