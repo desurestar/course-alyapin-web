@@ -19,6 +19,8 @@ class IsGroupLeader(permissions.BasePermission):
         else:
             group = getattr(obj, 'group', obj)
         leader_id = getattr(group, 'leader_id', None)
+        if request.user and request.user.is_authenticated and request.user.is_superuser:
+            return True
         return leader_id == request.user.id
 
 class IsGroupMember(permissions.BasePermission):

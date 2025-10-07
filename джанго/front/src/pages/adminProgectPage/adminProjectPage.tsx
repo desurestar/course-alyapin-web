@@ -133,13 +133,18 @@ export const AdminProjectPage: React.FC = () => {
 			group_id: edit.data.group_id ?? null,
 		}
 		if (!payload.title) return alert('Название обязательно')
+		if (edit.mode === 'create' && payload.group_id == null) {
+			return alert('Нужно выбрать коллектив')
+		}
 		setEdit(s => (s ? { ...s, loading: true } : s))
 		try {
 			if (edit.mode === 'create') {
 				const created = await createProject(payload)
 				setProjects(prev => [created as any, ...prev])
 			} else if (edit.mode === 'edit' && edit.data.id) {
-				const updated = await updateProject(edit.data.id, payload)
+				// Do not attempt to change group on edit (backend doesn't allow via PATCH currently)
+				const { group_id, ...patch } = payload
+				const updated = await updateProject(edit.data.id, patch)
 				setProjects(prev =>
 					prev.map(p => (p.id === updated.id ? (updated as any) : p))
 				)
@@ -234,18 +239,22 @@ export const AdminProjectPage: React.FC = () => {
 								<td>{p.status}</td>
 								<td>{p.start_date}</td>
 								<td className={styles.actions}>
-									<button
-										className={`${styles.btn} ${styles.btnSmall}`}
-										onClick={() => openEdit(p)}
-									>
-										Изм.
-									</button>{' '}
-									<button
-										className={`${styles.btn} ${styles.btnSmall} ${styles.btnDanger}`}
-										onClick={() => handleDelete(p.id)}
-									>
-										×
-									</button>
+									{p.can_edit && (
+										<>
+											<button
+												className={`${styles.btn} ${styles.btnSmall}`}
+												onClick={() => openEdit(p)}
+											>
+												Изм.
+											</button>{' '}
+											<button
+												className={`${styles.btn} ${styles.btnSmall} ${styles.btnDanger}`}
+												onClick={() => handleDelete(p.id)}
+											>
+												×
+											</button>
+										</>
+									)}
 								</td>
 							</tr>
 						))}
@@ -354,7 +363,7 @@ export const AdminProjectPage: React.FC = () => {
 												}
 										)
 									}
-									disabled={groupsLoading}
+									disabled={groupsLoading || edit.mode === 'edit'}
 								>
 									<option value=''>— не выбрано —</option>
 									{groups.map(g => (
@@ -363,6 +372,11 @@ export const AdminProjectPage: React.FC = () => {
 										</option>
 									))}
 								</select>
+								{edit.mode === 'edit' && (
+									<div className={styles.muted}>
+										Изменение коллектива недоступно при редактировании.
+									</div>
+								)}
 								{groupsError && (
 									<div
 										className={styles.muted}

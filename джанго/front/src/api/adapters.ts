@@ -121,6 +121,7 @@ export function adaptProjectSummary(raw: any): ProjectSummary {
 		end_date: raw.end_date,
 		supervisor_name: raw.supervisor_name,
 		group_id: raw.group_id ?? null,
+		can_edit: !!raw.can_edit,
 	}
 }
 
@@ -136,5 +137,6 @@ export function adaptProjectDetail(raw: any): ProjectDetail {
 		group_id: raw.group_id ?? null,
 		supervisor_name: raw.supervisor_name,
 		website: raw.website,
+		can_edit: !!raw.can_edit,
 	}
 }

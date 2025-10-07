@@ -11,6 +11,7 @@ export interface ProjectSummary {
 	end_date?: string
 	supervisor_name: string
 	group_id?: number | null // owning research group
+	can_edit?: boolean
 }
 
 export interface ProjectDetail extends ProjectSummary {

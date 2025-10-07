@@ -76,6 +76,8 @@ class GroupProjectSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
             return False
+        if request.user.is_superuser:
+            return True
         return obj.group.leader_id == request.user.id
 
     def to_representation(self, instance: GroupProject):
@@ -83,9 +85,6 @@ class GroupProjectSerializer(serializers.ModelSerializer):
         # split tags by comma
         raw = instance.tags or ''
         data['tags'] = [t for t in [s.strip() for s in raw.split(',')] if t]
-        # map internal 'on_hold' to frontend 'paused'
-        if data.get('status') == 'on_hold':
-            data['status'] = 'paused'
         return data
 
     def to_internal_value(self, data):
@@ -94,10 +93,6 @@ class GroupProjectSerializer(serializers.ModelSerializer):
         if isinstance(tags_val, list):
             data = data.copy()
             data['tags'] = ','.join([str(t).strip() for t in tags_val if str(t).strip()])
-        # allow frontend 'paused' value
-        if data.get('status') == 'paused':
-            data = data.copy()
-            data['status'] = 'on_hold'
         return super().to_internal_value(data)
 
 class GroupMemberSerializer(serializers.Serializer):

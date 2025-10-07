@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework import permissions, viewsets
+from rest_framework import permissions as drf_permissions
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -62,9 +64,15 @@ class GroupProjectViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         group_id = self.request.data.get('group') or self.request.query_params.get('group')
-        group = ResearchGroup.objects.get(pk=group_id)
-        if group.leader_id != self.request.user.id:
-            return Response({'detail':'Нет прав'}, status=403)
+        if not group_id:
+            raise ValidationError({'group': 'required'})
+        try:
+            group = ResearchGroup.objects.get(pk=group_id)
+        except ResearchGroup.DoesNotExist:
+            raise NotFound('Group not found')
+        # allow superuser bypass
+        if group.leader_id != self.request.user.id and not self.request.user.is_superuser:
+            raise PermissionDenied('Нет прав')
         serializer.save(group=group, supervisor=self.request.user)
 
     def get_queryset(self):
@@ -115,6 +123,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 'end_date': p.get('end_date'),
                 'supervisor_name': p.get('supervisor_name'),
                 'group_id': p.get('group_id'),
+                'can_edit': p.get('can_edit'),
             } for p in data
         ]
         return Response(summaries)
@@ -122,12 +131,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         group_id = self.request.data.get('group_id') or self.request.data.get('group')
         if not group_id:
-            return Response({'detail':'group_id required'}, status=400)
-        group = ResearchGroup.objects.filter(pk=group_id).first()
-        if not group:
-            return Response({'detail':'Group not found'}, status=404)
-        if group.leader_id != self.request.user.id:
-            return Response({'detail':'Нет прав'}, status=403)
+            raise ValidationError({'group_id': 'required'})
+        try:
+            group = ResearchGroup.objects.get(pk=group_id)
+        except ResearchGroup.DoesNotExist:
+            raise NotFound('Group not found')
+        if group.leader_id != self.request.user.id and not self.request.user.is_superuser:
+            raise PermissionDenied('Нет прав')
         serializer.save(group=group, supervisor=self.request.user)
 
     def update(self, request, *args, **kwargs):
@@ -218,13 +228,35 @@ class UserArticlesListView(APIView):
     '''
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, user_id:int):
-        user = User.objects.filter(pk=user_id).first()
-        if not user:
-            return Response({'detail':'Not found'}, status=404)
-        qs = Article.objects.filter(authors=user).prefetch_related('authors').order_by('-id')
-        data = ArticleSerializer(qs, many=True, context={'request':request}).data
+class GrantsListView(APIView):
+    '''Simple stub endpoint to satisfy frontend /grants/ requests.
+
+    Returns a static list of grant summaries. Replace with real model later.
+    '''
+    permission_classes = [drf_permissions.IsAuthenticated]
+
+    def get(self, request):
+        data = [
+            {
+                'id': 1,
+                'title': 'Demo Grant A',
+                'code': 'DEM-A',
+                'agency': 'AgencyX',
+                'start_date': '2025-01-01',
+                'end_date': '2025-12-31',
+            },
+            {
+                'id': 2,
+                'title': 'Demo Grant B',
+                'code': 'DEM-B',
+                'agency': 'AgencyY',
+                'start_date': '2025-03-01',
+                'end_date': '2026-02-28',
+            },
+        ]
         return Response(data)
+
+    # (Removed accidental duplicate get method unrelated to grants)
 
 class GroupDetailView(APIView):
     def get(self, request, id:int):
