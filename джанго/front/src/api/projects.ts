@@ -4,7 +4,7 @@ import type {
 	ProjectSummary,
 	UpdateProjectInput,
 } from '../types/project'
-import { API_USE_MOCK } from './config'
+import { adaptProjectDetail, adaptProjectSummary } from './adapters'
 import { http } from './http'
 
 // Intended backend endpoints:
@@ -15,7 +15,7 @@ import { http } from './http'
 //  DELETE /projects/{id}/            -> deleteProject
 // Notes: Server should include group_id (or null) for navigation to group page.
 
-const USE_MOCK = API_USE_MOCK
+const USE_MOCK = false
 
 // --- Mock state --- //
 interface MockProject extends ProjectDetail {}
@@ -26,12 +26,9 @@ let mockProjects: MockProject[] = [
 		description: 'Разработка сервиса тематического анализа.',
 		start_date: '2024-02-01',
 		status: 'in_progress',
-		budget: 2500000,
-		currency: 'RUB',
 		grant_id: 101,
 		group_id: 1,
 		supervisor_name: 'Иванов И.И.',
-		tags: ['NLP', 'Visualization'],
 		website: 'https://example.com/projects/nlp-analytics',
 	},
 	{
@@ -41,12 +38,9 @@ let mockProjects: MockProject[] = [
 		start_date: '2023-09-15',
 		end_date: '2025-03-01',
 		status: 'planned',
-		budget: 1200000,
-		currency: 'RUB',
 		grant_id: null,
 		group_id: 2,
 		supervisor_name: 'Петров П.П.',
-		tags: ['Django', 'PostgreSQL', 'RBAC'],
 	},
 	{
 		id: 3,
@@ -55,12 +49,9 @@ let mockProjects: MockProject[] = [
 		start_date: '2022-05-10',
 		end_date: '2024-12-31',
 		status: 'completed',
-		budget: 900000,
-		currency: 'RUB',
 		grant_id: 77,
 		group_id: 1,
 		supervisor_name: 'Сидорова А.А.',
-		tags: ['REST', 'ETL', 'Data Lake'],
 		website: 'https://example.com/projects/grants-repo',
 	},
 ]
@@ -80,6 +71,70 @@ function toSummary(p: MockProject): ProjectSummary {
 		supervisor_name: p.supervisor_name,
 		group_id: p.group_id ?? null,
 	}
+}
+
+// ---------------- Normalization (HTTP branch) --------------- //
+function normalizeSummary(raw: any): ProjectSummary {
+	return adaptProjectSummary ? adaptProjectSummary(raw) : raw
+}
+function normalizeDetail(raw: any): ProjectDetail {
+	return adaptProjectDetail ? adaptProjectDetail(raw) : raw
+}
+
+// ---------------- Payload Helpers ---------------- //
+export interface PrepareNewProjectInput {
+	title: string
+	description?: string
+	status?: string
+	start_date?: string
+	end_date?: string
+	website?: string
+	grant_id?: number | null
+	group_id?: number | null
+}
+
+export function prepareCreateProject(
+	input: PrepareNewProjectInput
+): NewProjectInput {
+	return {
+		title: input.title.trim(),
+		description: input.description?.trim() || undefined,
+		status: (input.status as any) || 'planned',
+		start_date: input.start_date || new Date().toISOString().slice(0, 10),
+		end_date: input.end_date || undefined,
+		website: input.website?.trim() || undefined,
+		grant_id: input.grant_id ?? null,
+		group_id: input.group_id ?? null,
+	}
+}
+
+export function buildProjectPatch(
+	prev: ProjectDetail,
+	next: Partial<ProjectDetail>
+): UpdateProjectInput {
+	const patch: any = {}
+	if (next.title && next.title.trim() !== prev.title)
+		patch.title = next.title.trim()
+	if (
+		next.description?.trim() !== undefined &&
+		next.description.trim() !== (prev.description || '')
+	)
+		patch.description = next.description.trim() || undefined
+	if (next.status && next.status !== prev.status) patch.status = next.status
+	if (next.start_date && next.start_date !== prev.start_date)
+		patch.start_date = next.start_date
+	if (next.end_date !== undefined && next.end_date !== prev.end_date)
+		patch.end_date = next.end_date || undefined
+	if (
+		next.website?.trim() !== undefined &&
+		next.website?.trim() !== (prev.website || '')
+	)
+		patch.website = next.website.trim() || undefined
+	if (next.grant_id !== undefined && next.grant_id !== prev.grant_id)
+		patch.grant_id = next.grant_id
+	if (next.group_id !== undefined && next.group_id !== prev.group_id)
+		patch.group_id = next.group_id
+	return patch
 }
 
 // --- Public API (mock or http) --- //
@@ -104,9 +159,10 @@ export async function listProjects(params?: {
 	if (params?.status) query.set('status', params.status)
 	if (params?.search) query.set('search', params.search)
 	if (params?.group_id) query.set('group', String(params.group_id))
-	return http<ProjectSummary[]>(`/projects/?${query.toString()}`, {
+	const res = await http<ProjectSummary[]>(`/projects/?${query.toString()}`, {
 		auth: true,
 	})
+	return res.map(normalizeSummary)
 }
 
 export async function getProject(id: number): Promise<ProjectDetail> {
@@ -116,7 +172,8 @@ export async function getProject(id: number): Promise<ProjectDetail> {
 		if (!p) throw new Error('Проект не найден')
 		return { ...p }
 	}
-	return http<ProjectDetail>(`/projects/${id}/`, { auth: true })
+	const raw = await http<ProjectDetail>(`/projects/${id}/`, { auth: true })
+	return normalizeDetail(raw)
 }
 
 export async function createProject(
@@ -131,9 +188,6 @@ export async function createProject(
 			status: input.status || 'planned',
 			start_date: input.start_date || new Date().toISOString().slice(0, 10),
 			end_date: input.end_date,
-			budget: input.budget,
-			currency: input.currency,
-			tags: input.tags,
 			website: input.website,
 			grant_id: input.grant_id ?? null,
 			group_id: input.group_id ?? null,
@@ -142,11 +196,12 @@ export async function createProject(
 		mockProjects.unshift(p)
 		return { ...p }
 	}
-	return http<ProjectDetail>(`/projects/`, {
+	const created = await http<ProjectDetail>(`/projects/`, {
 		method: 'POST',
 		auth: true,
 		body: JSON.stringify(input),
 	})
+	return normalizeDetail(created)
 }
 
 export async function updateProject(
@@ -165,11 +220,12 @@ export async function updateProject(
 		}
 		return { ...mockProjects[idx] }
 	}
-	return http<ProjectDetail>(`/projects/${id}/`, {
+	const updated = await http<ProjectDetail>(`/projects/${id}/`, {
 		method: 'PATCH',
 		auth: true,
 		body: JSON.stringify(patch),
 	})
+	return normalizeDetail(updated)
 }
 
 export async function deleteProject(id: number): Promise<void> {

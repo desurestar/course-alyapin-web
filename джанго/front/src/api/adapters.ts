@@ -8,16 +8,6 @@ import type {
 } from '../types/profile'
 import type { ProjectDetail, ProjectSummary } from '../types/project'
 
-// Generic safe accessor
-function pick<T extends object, K extends keyof T>(
-	obj: any,
-	keys: K[]
-): Pick<T, K> {
-	const out: any = {}
-	for (const k of keys) out[k] = obj?.[k]
-	return out
-}
-
 export function adaptProfileDetail(raw: any): ProfileDetail | null {
 	if (!raw) return null
 	return {
@@ -142,12 +132,9 @@ export function adaptProjectDetail(raw: any): ProjectDetail {
 		status: raw.status,
 		start_date: raw.start_date,
 		end_date: raw.end_date,
-		budget: raw.budget,
-		currency: raw.currency,
 		grant_id: raw.grant_id ?? null,
 		group_id: raw.group_id ?? null,
 		supervisor_name: raw.supervisor_name,
-		tags: raw.tags || [],
 		website: raw.website,
 	}
 }

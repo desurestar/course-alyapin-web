@@ -15,9 +15,6 @@ export interface ProjectSummary {
 
 export interface ProjectDetail extends ProjectSummary {
 	description?: string
-	budget?: number
-	currency?: 'RUB' | 'USD' | 'EUR'
-	tags?: string[]
 	website?: string
 	grant_id?: number | null
 }
@@ -29,9 +26,6 @@ export interface NewProjectInput {
 	status?: ProjectStatus
 	start_date?: string
 	end_date?: string
-	budget?: number
-	currency?: 'RUB' | 'USD' | 'EUR'
-	tags?: string[]
 	website?: string
 	grant_id?: number | null
 	group_id?: number | null
