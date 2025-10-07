@@ -13,6 +13,7 @@ import {
 } from './mocks/footer.mocks'
 import { logoUrl } from './mocks/header.mocks'
 import { AdminDepartmentPage } from './pages/adminDepartmentPage/adminDepartmentPage'
+import { AdminGrantsPage } from './pages/adminGrantsPage/adminGrantsPage'
 import { AdminGroupPage } from './pages/adminGropPage/adminGroupPage'
 import { AdminMainPage } from './pages/adminMainPage/adminMainPage'
 import { AdminProjectPage } from './pages/adminProgectPage/adminProjectPage'
@@ -42,6 +43,14 @@ function AppShell() {
 			<div className='siteContent'>
 				<Routes>
 					<Route path='/login' element={<LoginPage />} />
+					<Route
+						path='/admin/grants'
+						element={
+							<RequireAdmin>
+								<AdminGrantsPage />
+							</RequireAdmin>
+						}
+					/>
 					<Route
 						path='/'
 						element={
