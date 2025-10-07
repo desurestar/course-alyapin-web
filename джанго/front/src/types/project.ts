@@ -1,6 +1,7 @@
 // Shared project types for list & detail endpoints
-// Backend internal 'on_hold' mapped to frontend 'paused' via serializer. Keep union without 'on_hold'.
-export type ProjectStatus = 'planned' | 'in_progress' | 'completed' | 'paused'
+// Project status values. "on_hold" retained (was previously mapped to a hypothetical "paused").
+// If backend wants a different display label, map in UI layer instead of renaming the enum here.
+export type ProjectStatus = 'planned' | 'in_progress' | 'completed' | 'on_hold'
 
 export interface ProjectSummary {
 	id: number

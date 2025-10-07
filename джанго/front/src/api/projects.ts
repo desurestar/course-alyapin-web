@@ -63,16 +63,6 @@ let mockProjects: MockProject[] = [
 		tags: ['REST', 'ETL', 'Data Lake'],
 		website: 'https://example.com/projects/grants-repo',
 	},
-	{
-		id: 4,
-		title: 'Автоматизация отчётности по публикациям',
-		description: 'Формирование отчётов по публикационной активности.',
-		start_date: '2025-01-20',
-		status: 'on_hold',
-		group_id: 2,
-		supervisor_name: 'Кузнецов Д.Д.',
-		tags: ['Reporting', 'Scheduler'],
-	},
 ]
 let nextProjectId = 5
 
