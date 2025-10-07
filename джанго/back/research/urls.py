@@ -1,11 +1,12 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import ArticleViewSet, GrantsListView, GroupArticleView, GroupDetailView, GroupListCreateView, GroupMembershipActionsView, GroupProjectActionsView, ProfileView, ProjectViewSet, UserArticlesListView, UserGroupsListView, UserSearchView
+from .views import ArticleViewSet, GrantViewSet, GroupArticleView, GroupDetailView, GroupListCreateView, GroupMembershipActionsView, GroupProjectActionsView, ProfileView, ProjectViewSet, UserArticlesListView, UserGroupsListView, UserSearchView
 
 router = DefaultRouter()
 router.register('articles', ArticleViewSet, basename='article')
 router.register('projects', ProjectViewSet, basename='project')
+router.register('grants', GrantViewSet, basename='grant')
 
 urlpatterns = [
     # profile aggregation & user search
@@ -28,6 +29,4 @@ urlpatterns = [
     path('groups/<int:id>/add_member/', GroupMembershipActionsView.as_view(), {'action':'add_member'}, name='group-add-member'),
     path('groups/<int:id>/remove_member/', GroupMembershipActionsView.as_view(), {'action':'remove_member'}, name='group-remove-member'),
     path('users/<int:user_id>/articles/', UserArticlesListView.as_view(), name='user-articles'),
-    # grants stub
-    path('grants/', GrantsListView.as_view(), name='grants-list'),
 ] + router.urls

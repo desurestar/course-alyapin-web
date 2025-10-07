@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from .models import Article, GroupProject
+from .models import Article, Grant, GroupProject
 
 User = get_user_model()
 
@@ -152,3 +152,8 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'avatar': {'required': False},
         }
+
+class GrantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Grant
+        fields = ('id','title','code','agency','start_date','end_date','created_at','updated_at')

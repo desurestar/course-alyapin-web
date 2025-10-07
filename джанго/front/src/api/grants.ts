@@ -1,4 +1,3 @@
-import { API_USE_MOCK } from './config'
 import { http } from './http'
 
 export interface GrantSummary {
@@ -10,7 +9,7 @@ export interface GrantSummary {
 	end_date?: string
 }
 
-const USE_MOCK = API_USE_MOCK
+const USE_MOCK = false
 
 // Simple in-memory mock dataset
 let mockGrants: GrantSummary[] = [

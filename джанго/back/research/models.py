@@ -62,3 +62,18 @@ class GroupArticle(models.Model):
 
     def __str__(self):
         return f'{self.article_id} in group {self.group_id}'
+
+
+class Grant(TimeStamped):
+    title = models.CharField(max_length=500)
+    code = models.CharField(max_length=64, blank=True)
+    agency = models.CharField(max_length=255, blank=True)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-id']
+        indexes = [models.Index(fields=['title']), models.Index(fields=['code'])]
+
+    def __str__(self):
+        return self.title[:100]

@@ -1,16 +1,15 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework import permissions, viewsets
-from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from academic.models import ResearchGroup, ResearchGroupMembership
 
-from .models import Article, GroupArticle, GroupProject
+from .models import Article, Grant, GroupArticle, GroupProject
 from .permissions import IsArticleAuthor, IsGroupLeader
-from .serializers import ArticleSerializer, GroupProjectSerializer, ProfileUpdateSerializer, UserPublicSerializer
+from .serializers import ArticleSerializer, GrantSerializer, GroupProjectSerializer, ProfileUpdateSerializer, UserPublicSerializer
 
 User = get_user_model()
 
@@ -228,33 +227,31 @@ class UserArticlesListView(APIView):
     '''
     permission_classes = [permissions.IsAuthenticated]
 
-class GrantsListView(APIView):
-    '''Simple stub endpoint to satisfy frontend /grants/ requests.
+class GrantViewSet(viewsets.ModelViewSet):
+    queryset = Grant.objects.all()
+    serializer_class = GrantSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-    Returns a static list of grant summaries. Replace with real model later.
-    '''
-    permission_classes = [drf_permissions.IsAuthenticated]
+    def get_permissions(self):
+        # allow any authenticated user to list; restrict writes to staff or superuser
+        if self.action in ['list','retrieve']:
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated()]
 
-    def get(self, request):
-        data = [
-            {
-                'id': 1,
-                'title': 'Demo Grant A',
-                'code': 'DEM-A',
-                'agency': 'AgencyX',
-                'start_date': '2025-01-01',
-                'end_date': '2025-12-31',
-            },
-            {
-                'id': 2,
-                'title': 'Demo Grant B',
-                'code': 'DEM-B',
-                'agency': 'AgencyY',
-                'start_date': '2025-03-01',
-                'end_date': '2026-02-28',
-            },
-        ]
-        return Response(data)
+    def create(self, request, *args, **kwargs):
+        if not (request.user.is_staff or request.user.is_superuser):
+            return Response({'detail':'Нет прав'}, status=403)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        if not (request.user.is_staff or request.user.is_superuser):
+            return Response({'detail':'Нет прав'}, status=403)
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        if not (request.user.is_staff or request.user.is_superuser):
+            return Response({'detail':'Нет прав'}, status=403)
+        return super().destroy(request, *args, **kwargs)
 
     # (Removed accidental duplicate get method unrelated to grants)
 
