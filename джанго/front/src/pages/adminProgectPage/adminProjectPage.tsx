@@ -172,7 +172,7 @@ export const AdminProjectPage: React.FC = () => {
 						+ Новый
 					</button>
 					<select
-						className={styles.btn}
+						className={styles.searchInput}
 						value={filter.status || ''}
 						onChange={e =>
 							setFilter(f => ({
@@ -188,7 +188,7 @@ export const AdminProjectPage: React.FC = () => {
 						<option value='on_hold'>Заморожен</option>
 					</select>
 					<input
-						className={`${styles.btn} ${styles.grow}`}
+						className={`${styles.searchInput} ${styles.grow}`}
 						placeholder='Поиск'
 						value={filter.search || ''}
 						onChange={e =>

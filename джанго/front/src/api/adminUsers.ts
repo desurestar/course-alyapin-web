@@ -1,5 +1,5 @@
 import type { UserPublic } from '../types/auth'
-import { API_USE_MOCK } from './config'
+// (Global API_USE_MOCK ignored here; using domain-specific env instead)
 import { http } from './http'
 
 // Types specific for admin user management
@@ -44,7 +44,11 @@ export interface PaginatedUsers {
 	page_size: number
 }
 
-const USE_MOCK = API_USE_MOCK
+// Domain-specific override: set VITE_API_USE_MOCK_ADMIN_USERS explicitly to 'true' to keep mocks.
+// Otherwise admin users API will go to real backend even if global API_USE_MOCK = true.
+const domainEnv = import.meta.env.VITE_API_USE_MOCK_ADMIN_USERS
+const USE_MOCK =
+	domainEnv === 'true' ? true : domainEnv === 'false' ? false : false
 
 // --- Mock state --- //
 let mockUsers: AdminUser[] = [

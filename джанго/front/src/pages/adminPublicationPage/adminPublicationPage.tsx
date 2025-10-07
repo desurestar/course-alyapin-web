@@ -139,7 +139,7 @@ export const AdminPublicationPage: React.FC = () => {
 				<header className={styles.header}>
 					<h1 className={styles.title}>Публикации</h1>
 					<input
-						className={`${styles.btn} ${styles.grow}`}
+						className={`${styles.searchInput} ${styles.grow}`}
 						placeholder='Поиск'
 						value={search}
 						onChange={e => setSearch(e.target.value)}

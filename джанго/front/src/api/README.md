@@ -50,6 +50,19 @@ Authors array is normalized to `{ id, full_name }[]`.
 
 Helper utilities build clean payloads and avoid sending unchanged fields.
 
+Per-domain mock override: admin users now ignore the global `API_USE_MOCK` flag by default and go straight to HTTP.
+To force mock mode only for this domain set env:
+
+```
+VITE_API_USE_MOCK_ADMIN_USERS=true
+```
+
+To explicitly ensure HTTP (even if future logic changes), set:
+
+```
+VITE_API_USE_MOCK_ADMIN_USERS=false
+```
+
 ## Groups
 
 Current minimal read helpers:

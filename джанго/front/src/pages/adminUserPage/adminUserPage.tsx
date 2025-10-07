@@ -127,7 +127,7 @@ export const AdminUserPage: React.FC = () => {
 						+ Новый
 					</button>
 					<input
-						className={`${styles.btn} ${styles.grow}`}
+						className={`${styles.searchInput} ${styles.grow}`}
 						placeholder='Поиск'
 						value={search}
 						onChange={e => setSearch(e.target.value)}

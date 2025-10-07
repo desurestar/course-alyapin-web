@@ -123,8 +123,8 @@
 /* Buttons */
 .btn {
 	cursor: pointer;
-	border: 1px solid var(--adm-btn-border, #cbd5e1);
-	background: var(--adm-btn-bg, #f8fafc);
+	border: 1px solid var(--adm-btn-dark-border, #1f2937);
+	background: var(--adm-btn-dark-bg, #1f2937);
 	padding: 6px 14px;
 	border-radius: 6px;
 	font-size: 13px;
@@ -135,9 +135,10 @@
 	align-items: center;
 	transition: background 0.15s, border-color 0.15s, color 0.15s,
 		box-shadow 0.15s;
+	color: #ffffff;
 }
 .btn:hover {
-	background: var(--adm-btn-bg-hover, #f1f5f9);
+	background: var(--adm-btn-dark-bg-hover, #273548);
 }
 .btn:focus-visible {
 	outline: 2px solid var(--adm-focus);
@@ -163,6 +164,37 @@
 .btnSmall {
 	padding: 3px 8px;
 	font-size: 12px;
+}
+
+/* Light search input (separate from dark buttons) */
+.searchInput {
+	border: 1px solid var(--adm-input-border, #cbd5e1);
+	background: var(--adm-input-bg, #ffffff);
+	padding: 6px 12px;
+	border-radius: 6px;
+	font-size: 13px;
+	line-height: 1.2;
+	font-family: inherit;
+	transition: background 0.15s, border-color 0.15s, color 0.15s,
+		box-shadow 0.15s;
+}
+.searchInput:focus-visible {
+	outline: 2px solid var(--adm-focus);
+	outline-offset: 2px;
+}
+@media (prefers-color-scheme: dark) {
+	.btn {
+		background: var(--adm-btn-dark-bg, #334155);
+		border-color: var(--adm-btn-dark-border, #334155);
+	}
+	.btn:hover {
+		background: var(--adm-btn-dark-bg-hover, #3e4d60);
+	}
+	.searchInput {
+		background: var(--adm-input-bg, #243244);
+		border-color: var(--adm-input-border, #4a5568);
+		color: #e2e8f0;
+	}
 }
 
 /* Card */
