@@ -228,29 +228,34 @@ class UserArticlesListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
 class GrantViewSet(viewsets.ModelViewSet):
-    queryset = Grant.objects.all()
+    queryset = Grant.objects.select_related('leader').all()
     serializer_class = GrantSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_permissions(self):
-        # allow any authenticated user to list; restrict writes to staff or superuser
         if self.action in ['list','retrieve']:
             return [permissions.IsAuthenticated()]
+        # create/update/delete restricted below
         return [permissions.IsAuthenticated()]
 
-    def create(self, request, *args, **kwargs):
+    def _ensure_write_perms(self, request):
         if not (request.user.is_staff or request.user.is_superuser):
-            return Response({'detail':'Нет прав'}, status=403)
+            raise PermissionDenied('Нет прав')
+
+    def create(self, request, *args, **kwargs):
+        self._ensure_write_perms(request)
         return super().create(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
-        if not (request.user.is_staff or request.user.is_superuser):
-            return Response({'detail':'Нет прав'}, status=403)
+        self._ensure_write_perms(request)
         return super().update(request, *args, **kwargs)
 
+    def partial_update(self, request, *args, **kwargs):
+        self._ensure_write_perms(request)
+        return super().partial_update(request, *args, **kwargs)
+
     def destroy(self, request, *args, **kwargs):
-        if not (request.user.is_staff or request.user.is_superuser):
-            return Response({'detail':'Нет прав'}, status=403)
+        self._ensure_write_perms(request)
         return super().destroy(request, *args, **kwargs)
 
     # (Removed accidental duplicate get method unrelated to grants)

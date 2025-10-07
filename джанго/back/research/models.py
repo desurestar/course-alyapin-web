@@ -70,10 +70,17 @@ class Grant(TimeStamped):
     agency = models.CharField(max_length=255, blank=True)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
+    description = models.TextField(blank=True)
+    amount = models.DecimalField(max_digits=16, decimal_places=2, null=True, blank=True)
+    leader = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='led_grants')
 
     class Meta:
         ordering = ['-id']
-        indexes = [models.Index(fields=['title']), models.Index(fields=['code'])]
+        indexes = [
+            models.Index(fields=['title']),
+            models.Index(fields=['code']),
+            models.Index(fields=['leader']),
+        ]
 
     def __str__(self):
         return self.title[:100]

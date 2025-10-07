@@ -23,6 +23,8 @@ export const GrantsPage: FC = () => {
 					id: g.id,
 					title: g.title,
 					fund: g.agency || g.code || '—',
+					amount: g.amount,
+					supervisorName: g.leader_name || '—',
 					startDate: g.start_date,
 					endDate: g.end_date,
 				}))

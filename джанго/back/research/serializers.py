@@ -154,6 +154,13 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         }
 
 class GrantSerializer(serializers.ModelSerializer):
+    leader_id = serializers.PrimaryKeyRelatedField(source='leader', queryset=User.objects.all(), required=False, allow_null=True)
+    leader_name = serializers.CharField(source='leader.full_name', read_only=True)
+
     class Meta:
         model = Grant
-        fields = ('id','title','code','agency','start_date','end_date','created_at','updated_at')
+        fields = (
+            'id','title','code','agency','start_date','end_date',
+            'description','amount','leader_id','leader_name',
+            'created_at','updated_at'
+        )
