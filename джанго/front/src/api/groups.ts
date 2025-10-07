@@ -1,4 +1,5 @@
 import type { GroupMember, ProfileGroup } from '../types/profile'
+import { camelizeResponse } from '../utils/case'
 import { http } from './http'
 
 const USE_MOCK = false
@@ -11,12 +12,21 @@ async function loadMock() {
 // Admin / global listing (for management UI)
 // Backend endpoint assumption: GET /groups/?page=&page_size=&search=
 // For now returns full array (no pagination) in mock mode.
-export async function listAllGroups(): Promise<ProfileGroup[]> {
+export async function listAllGroups(
+	params: { page?: number; page_size?: number; search?: string } = {}
+): Promise<ProfileGroup[]> {
 	if (USE_MOCK) {
 		const m = await loadMock()
 		return (m as any).groups?.map((g: ProfileGroup) => ({ ...g })) || []
 	}
-	return http<ProfileGroup[]>(`/groups/`, { auth: true })
+	const q = new URLSearchParams()
+	if (params.page) q.set('page', String(params.page))
+	if (params.page_size) q.set('page_size', String(params.page_size))
+	if (params.search) q.set('search', params.search)
+	const raw = await http(`/groups/${q.toString() ? `?${q.toString()}` : ''}`, {
+		auth: true,
+	})
+	return camelizeResponse<ProfileGroup[]>(raw)
 }
 
 // Backend mapping (intended production endpoints):
@@ -56,20 +66,18 @@ export async function getGroup(id: number): Promise<ProfileGroup> {
 			can_manage: false,
 		}
 	}
-	const raw: any = await http<ProfileGroup & { memberships?: any[] }>(
-		`/groups/${id}/`,
-		{
-			auth: true,
-		}
+	const rawResp: any = await http(`/groups/${id}/`, { auth: true })
+	const raw: any = camelizeResponse<ProfileGroup & { memberships?: any[] }>(
+		rawResp
 	)
 	// Backend returns 'memberships' (each with user + role). Map to frontend 'members'.
 	if (!raw.members && Array.isArray((raw as any).memberships)) {
 		const members: GroupMember[] = raw.memberships.map((m: any) => ({
-			id: m.user?.id ?? m.user_id ?? m.id,
+			id: m.user?.id ?? m.userId ?? m.id,
 			full_name:
-				m.user?.full_name ||
+				m.user?.fullName ||
 				(m.user
-					? `${m.user.first_name || ''} ${m.user.last_name || ''}`.trim() ||
+					? `${m.user.firstName || ''} ${m.user.lastName || ''}`.trim() ||
 					  m.user.username
 					: 'user#' + (m.user?.id ?? '')),
 			is_leader: m.role === 'leader',
@@ -87,7 +95,8 @@ export async function listUserGroups(userId: number): Promise<ProfileGroup[]> {
 		const p = await m.getProfileDetail(userId, userId)
 		return p?.groups || []
 	}
-	return http<ProfileGroup[]>(`/users/${userId}/groups/`, { auth: true })
+	const raw = await http(`/users/${userId}/groups/`, { auth: true })
+	return camelizeResponse<ProfileGroup[]>(raw)
 }
 
 export async function createGroupApi(
@@ -98,11 +107,12 @@ export async function createGroupApi(
 		const m = await loadMock()
 		return m.createGroup(currentUserId, input)
 	}
-	return http<ProfileGroup>(`/groups/`, {
+	const raw = await http(`/groups/`, {
 		method: 'POST',
 		auth: true,
 		body: JSON.stringify(input),
 	})
+	return camelizeResponse<ProfileGroup>(raw)
 }
 
 export async function updateGroupApi(
@@ -113,11 +123,12 @@ export async function updateGroupApi(
 		const m = await loadMock()
 		return m.updateGroup(groupId, patch)
 	}
-	return http<ProfileGroup>(`/groups/${groupId}/`, {
+	const raw = await http(`/groups/${groupId}/`, {
 		method: 'PATCH',
 		auth: true,
 		body: JSON.stringify(patch),
 	})
+	return camelizeResponse<ProfileGroup>(raw)
 }
 
 export async function deleteGroupApi(groupId: number) {

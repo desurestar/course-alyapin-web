@@ -38,6 +38,7 @@ export interface ResearchGroup {
 	name: string
 	leaderName?: string
 	membersCount?: number
+	membershipRole?: string
 }
 export interface ArticleRef {
 	id: number

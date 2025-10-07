@@ -25,13 +25,43 @@ class ResearchGroupSerializer(serializers.ModelSerializer):
         queryset=User.objects.all(), source='leader', write_only=True, required=False
     )
     members_count = serializers.IntegerField(source='memberships.count', read_only=True)
+    membership_role = serializers.SerializerMethodField()
+    is_leader = serializers.SerializerMethodField()
+    can_manage = serializers.SerializerMethodField()
 
     class Meta:
         model = ResearchGroup
         fields = (
             'id', 'name', 'description', 'department',
-            'leader', 'leader_id', 'is_active', 'members_count'
+            'leader', 'leader_id', 'is_active', 'members_count',
+            'membership_role','is_leader','can_manage'
         )
+
+    def _get_request_user_id(self):
+        req = self.context.get('request')
+        if req and req.user and req.user.is_authenticated:
+            return req.user.id
+        return None
+
+    def get_membership_role(self, obj: ResearchGroup):
+        uid = self._get_request_user_id()
+        if not uid:
+            return None
+        m = getattr(obj, '_membership_cache', None)
+        if m is None:
+            m = obj.memberships.filter(user_id=uid).first()
+            obj._membership_cache = m
+        if not m:
+            return None
+        return 'Руководитель' if m.role == 'leader' else 'Участник'
+
+    def get_is_leader(self, obj: ResearchGroup):
+        uid = self._get_request_user_id()
+        return bool(uid and obj.leader_id == uid)
+
+    def get_can_manage(self, obj: ResearchGroup):
+        # можно уточнить права далее
+        return self.get_is_leader(obj)
 
 class ResearchGroupDetailSerializer(ResearchGroupSerializer):
     memberships = ResearchGroupMembershipSerializer(many=True, read_only=True)

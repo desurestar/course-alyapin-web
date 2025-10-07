@@ -92,6 +92,18 @@ class ResearchGroupViewSet(viewsets.ModelViewSet):
             return ResearchGroupDetailSerializer
         return ResearchGroupSerializer
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.action in ('list','retrieve'):
+            # prefetch memberships only for listing to expose membership_role efficiently
+            qs = qs.prefetch_related('memberships__user')
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        qs = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
+
     @action(detail=True, methods=['get'], permission_classes=[AllowAny])
     def members(self, request, pk=None):
         group = self.get_object()

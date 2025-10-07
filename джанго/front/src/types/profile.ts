@@ -14,7 +14,8 @@ export interface ProfileGroup {
 	id: number
 	name: string
 	description?: string
-	role?: string // роль текущего пользователя в этой группе
+	role?: string // локализованная роль ('Руководитель' | 'Участник')
+	membershipRole?: string // сырой role code ('leader' | 'member') если понадобится
 	is_leader?: boolean
 	members_count?: number
 	leader_id?: number

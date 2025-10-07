@@ -178,8 +178,7 @@ export function RequireAuth({ children }: { children: ReactElement }) {
 
 export function useIsAdmin() {
 	const { user } = useAuth()
-	// fallback: treat user id 1 as admin if backend didn't yet return is_superuser
-	return !!user && (user.is_superuser || (user as any).is_staff)
+	return !!user && (user.is_superuser || user.is_staff)
 }
 
 export function RequireAdmin({ children }: { children: ReactElement }) {
@@ -203,10 +202,4 @@ export function RequireAdmin({ children }: { children: ReactElement }) {
 		)
 	}
 	return children
-}
-
-export interface UserPublic {
-  // ... текущее
-  is_superuser?: boolean
-  is_staff?: boolean
 }

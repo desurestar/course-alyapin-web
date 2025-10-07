@@ -358,6 +358,9 @@ class GroupProjectActionsView(APIView):
 
 class GroupListCreateView(APIView):
     def post(self, request):
+        # Only staff or superuser can create new research groups (policy refinement)
+        if not (request.user.is_staff or request.user.is_superuser):
+            return Response({'detail':'Недостаточно прав для создания группы'}, status=403)
         name = (request.data.get('name') or '').strip()
         if not name:
             return Response({'detail':'Название группы обязательно'}, status=400)

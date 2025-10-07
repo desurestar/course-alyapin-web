@@ -1,5 +1,6 @@
 // Shared project types for list & detail endpoints
-export type ProjectStatus = 'planned' | 'in_progress' | 'completed' | 'on_hold'
+// Backend internal 'on_hold' mapped to frontend 'paused' via serializer. Keep union without 'on_hold'.
+export type ProjectStatus = 'planned' | 'in_progress' | 'completed' | 'paused'
 
 export interface ProjectSummary {
 	id: number
