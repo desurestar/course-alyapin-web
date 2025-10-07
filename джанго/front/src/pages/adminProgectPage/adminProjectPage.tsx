@@ -12,6 +12,8 @@ import type {
 	ProjectStatus,
 } from '../../types/project'
 
+import styles from './adminProjectPage.module.css'
+
 interface EditState {
 	mode: 'create' | 'edit'
 	loading: boolean
@@ -127,12 +129,15 @@ export const AdminProjectPage: React.FC = () => {
 	}
 
 	return (
-		<main style={{ padding: 24, display: 'flex', gap: 24 }}>
-			<section style={{ flex: 2 }}>
-				<header style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-					<h1 style={{ margin: 0, fontSize: 22 }}>Проекты</h1>
-					<button onClick={openCreate}>+ Новый</button>
+		<main className={styles.root}>
+			<section className={styles.listPane}>
+				<header className={styles.header}>
+					<h1 className={styles.title}>Проекты</h1>
+					<button className={styles.btn} onClick={openCreate}>
+						+ Новый
+					</button>
 					<select
+						className={styles.btn}
 						value={filter.status || ''}
 						onChange={e =>
 							setFilter(f => ({
@@ -148,19 +153,25 @@ export const AdminProjectPage: React.FC = () => {
 						<option value='on_hold'>Заморожен</option>
 					</select>
 					<input
+						className={`${styles.btn} ${styles.grow}`}
 						placeholder='Поиск'
 						value={filter.search || ''}
 						onChange={e =>
 							setFilter(f => ({ ...f, search: e.target.value || undefined }))
 						}
-						style={{ flex: 1 }}
 					/>
+					{(filter.status || filter.search) && (
+						<button
+							className={`${styles.btn} ${styles.btnSmall}`}
+							onClick={() => setFilter({})}
+						>
+							Сброс
+						</button>
+					)}
 				</header>
 				{loading && <p>Загрузка...</p>}
 				{error && <p style={{ color: 'red' }}>{error}</p>}
-				<table
-					style={{ width: '100%', marginTop: 12, borderCollapse: 'collapse' }}
-				>
+				<table className={styles.table}>
 					<thead>
 						<tr>
 							<th>ID</th>
@@ -174,18 +185,12 @@ export const AdminProjectPage: React.FC = () => {
 						{projects.map(p => (
 							<tr
 								key={p.id}
-								style={{
-									background: p.id === selectedId ? '#f5f5f5' : undefined,
-								}}
+								className={p.id === selectedId ? styles.rowSelected : undefined}
 							>
 								<td>{p.id}</td>
 								<td>
 									<button
-										style={{
-											all: 'unset',
-											cursor: 'pointer',
-											color: '#0366d6',
-										}}
+										className={styles.linkBtn}
 										onClick={() => handleSelect(p.id)}
 									>
 										{p.title}
@@ -193,21 +198,29 @@ export const AdminProjectPage: React.FC = () => {
 								</td>
 								<td>{p.status}</td>
 								<td>{p.start_date}</td>
-								<td style={{ textAlign: 'right' }}>
-									<button onClick={() => openEdit(p)}>Изм.</button>{' '}
-									<button onClick={() => handleDelete(p.id)}>×</button>
+								<td className={styles.actions}>
+									<button
+										className={`${styles.btn} ${styles.btnSmall}`}
+										onClick={() => openEdit(p)}
+									>
+										Изм.
+									</button>{' '}
+									<button
+										className={`${styles.btn} ${styles.btnSmall} ${styles.btnDanger}`}
+										onClick={() => handleDelete(p.id)}
+									>
+										×
+									</button>
 								</td>
 							</tr>
 						))}
 					</tbody>
 				</table>
 			</section>
-			<aside style={{ flex: 1, minWidth: 320 }}>
+			<aside className={styles.detailPane}>
 				{selected && (
-					<div
-						style={{ border: '1px solid #ddd', padding: 16, borderRadius: 6 }}
-					>
-						<h2 style={{ marginTop: 0 }}>Детали</h2>
+					<div className={styles.card}>
+						<h2>Детали</h2>
 						<p>
 							<strong>ID:</strong> {selected.id}
 						</p>
@@ -220,18 +233,42 @@ export const AdminProjectPage: React.FC = () => {
 						{selected.description && (
 							<p style={{ whiteSpace: 'pre-wrap' }}>{selected.description}</p>
 						)}
+						{selected.start_date && (
+							<p className={styles.muted}>Начало: {selected.start_date}</p>
+						)}
+						{selected.end_date && (
+							<p className={styles.muted}>Окончание: {selected.end_date}</p>
+						)}
+						{selected.website && (
+							<p className={styles.muted}>
+								Сайт:{' '}
+								<a href={selected.website} target='_blank' rel='noreferrer'>
+									{selected.website}
+								</a>
+							</p>
+						)}
+						{selected.tags && selected.tags.length > 0 && (
+							<p className={styles.muted}>Теги: {selected.tags.join(', ')}</p>
+						)}
 					</div>
 				)}
 				{edit && (
-					<div style={{ marginTop: 24 }}>
-						<h2 style={{ marginTop: 0 }}>
+					<form
+						className={`${styles.card} ${styles.form}`}
+						onSubmit={e => {
+							e.preventDefault()
+							submitForm()
+						}}
+					>
+						<h2>
 							{edit.mode === 'create'
 								? 'Новый проект'
 								: `Редактирование #${edit.data.id}`}
 						</h2>
-						<label style={{ display: 'block', marginBottom: 8 }}>
+						<label className={styles.field}>
 							<span>Название *</span>
 							<input
+								type='text'
 								value={edit.data.title || ''}
 								onChange={e =>
 									setEdit(
@@ -239,13 +276,145 @@ export const AdminProjectPage: React.FC = () => {
 											s && { ...s, data: { ...s.data, title: e.target.value } }
 									)
 								}
-								style={{ width: '100%' }}
+								required
 							/>
 						</label>
-						<label style={{ display: 'block', marginBottom: 8 }}>
-							<span>Статус</span>
-							<select
-								value={edit.data.status || 'planned'}
+						<div className={styles.inline}>
+							<label className={styles.field}>
+								<span>Статус</span>
+								<select
+									value={edit.data.status || 'planned'}
+									onChange={e =>
+										setEdit(
+											s =>
+												s && {
+													...s,
+													data: {
+														...s.data,
+														status: e.target.value as ProjectStatus,
+													},
+												}
+										)
+									}
+								>
+									<option value='planned'>Запланирован</option>
+									<option value='in_progress'>В работе</option>
+									<option value='completed'>Завершён</option>
+									<option value='on_hold'>Заморожен</option>
+								</select>
+							</label>
+							<label className={styles.field}>
+								<span>Группа (ID)</span>
+								<input
+									type='number'
+									value={edit.data.group_id ?? ''}
+									onChange={e =>
+										setEdit(
+											s =>
+												s && {
+													...s,
+													data: {
+														...s.data,
+														group_id: e.target.value
+															? Number(e.target.value)
+															: null,
+													},
+												}
+										)
+									}
+									min={1}
+								/>
+							</label>
+						</div>
+						<div className={styles.inline}>
+							<label className={styles.field}>
+								<span>Начало</span>
+								<input
+									type='date'
+									value={edit.data.start_date || ''}
+									onChange={e =>
+										setEdit(
+											s =>
+												s && {
+													...s,
+													data: {
+														...s.data,
+														start_date: e.target.value || undefined,
+													},
+												}
+										)
+									}
+								/>
+							</label>
+							<label className={styles.field}>
+								<span>Окончание</span>
+								<input
+									type='date'
+									value={edit.data.end_date || ''}
+									onChange={e =>
+										setEdit(
+											s =>
+												s && {
+													...s,
+													data: {
+														...s.data,
+														end_date: e.target.value || undefined,
+													},
+												}
+										)
+									}
+								/>
+							</label>
+						</div>
+						<div className={styles.inline}>
+							<label className={styles.field}>
+								<span>Бюджет</span>
+								<input
+									type='number'
+									value={edit.data.budget ?? ''}
+									onChange={e =>
+										setEdit(
+											s =>
+												s && {
+													...s,
+													data: {
+														...s.data,
+														budget: e.target.value
+															? Number(e.target.value)
+															: undefined,
+													},
+												}
+										)
+									}
+									min={0}
+								/>
+							</label>
+							<label className={styles.field}>
+								<span>Валюта</span>
+								<select
+									value={edit.data.currency || ''}
+									onChange={e =>
+										setEdit(
+											s =>
+												s && {
+													...s,
+													data: { ...s.data, currency: e.target.value as any },
+												}
+										)
+									}
+								>
+									<option value=''>—</option>
+									<option value='RUB'>RUB</option>
+									<option value='USD'>USD</option>
+									<option value='EUR'>EUR</option>
+								</select>
+							</label>
+						</div>
+						<label className={styles.field}>
+							<span>Теги (через запятую)</span>
+							<input
+								type='text'
+								value={edit.data.tags?.join(', ') || ''}
 								onChange={e =>
 									setEdit(
 										s =>
@@ -253,20 +422,62 @@ export const AdminProjectPage: React.FC = () => {
 												...s,
 												data: {
 													...s.data,
-													status: e.target.value as ProjectStatus,
+													tags: e.target.value
+														? e.target.value
+																.split(',')
+																.map(t => t.trim())
+																.filter(Boolean)
+														: undefined,
 												},
 											}
 									)
 								}
-								style={{ width: '100%' }}
-							>
-								<option value='planned'>Запланирован</option>
-								<option value='in_progress'>В работе</option>
-								<option value='completed'>Завершён</option>
-								<option value='on_hold'>Заморожен</option>
-							</select>
+							/>
+							<div className={styles.tagsHelp}>Пример: NLP, Data, ML</div>
 						</label>
-						<label style={{ display: 'block', marginBottom: 8 }}>
+						<label className={styles.field}>
+							<span>Сайт</span>
+							<input
+								type='text'
+								placeholder='https://'
+								value={edit.data.website || ''}
+								onChange={e =>
+									setEdit(
+										s =>
+											s && {
+												...s,
+												data: {
+													...s.data,
+													website: e.target.value || undefined,
+												},
+											}
+									)
+								}
+							/>
+						</label>
+						<label className={styles.field}>
+							<span>ID гранта</span>
+							<input
+								type='number'
+								value={edit.data.grant_id ?? ''}
+								onChange={e =>
+									setEdit(
+										s =>
+											s && {
+												...s,
+												data: {
+													...s.data,
+													grant_id: e.target.value
+														? Number(e.target.value)
+														: null,
+												},
+											}
+									)
+								}
+								min={1}
+							/>
+						</label>
+						<label className={styles.field}>
 							<span>Описание</span>
 							<textarea
 								value={edit.data.description || ''}
@@ -280,18 +491,26 @@ export const AdminProjectPage: React.FC = () => {
 									)
 								}
 								rows={4}
-								style={{ width: '100%', resize: 'vertical' }}
 							/>
 						</label>
-						<div style={{ display: 'flex', gap: 8 }}>
-							<button disabled={edit.loading} onClick={submitForm}>
+						<div className={styles.inline}>
+							<button
+								className={`${styles.btn} ${styles.btnPrimary}`}
+								type='submit'
+								disabled={edit.loading}
+							>
 								{edit.loading ? 'Сохранение...' : 'Сохранить'}
 							</button>
-							<button disabled={edit.loading} onClick={() => setEdit(null)}>
+							<button
+								className={styles.btn}
+								type='button'
+								disabled={edit.loading}
+								onClick={() => setEdit(null)}
+							>
 								Отмена
 							</button>
 						</div>
-					</div>
+					</form>
 				)}
 			</aside>
 		</main>
