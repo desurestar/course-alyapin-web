@@ -99,6 +99,19 @@ class ResearchGroupViewSet(viewsets.ModelViewSet):
             qs = qs.prefetch_related('memberships__user')
         return qs
 
+    def perform_create(self, serializer):
+        """Ensure creator becomes leader and membership is created.
+
+        Without this, groups created via academic endpoint lack a ResearchGroupMembership
+        record, so ProfileView (which derives groups from memberships) won't show the
+        newly created group after page refresh. This also sets the leader field if not provided.
+        """
+        group = serializer.save(leader=self.request.user)
+        # create leader membership if missing
+        ResearchGroupMembership.objects.get_or_create(
+            group=group, user=self.request.user, defaults={'role': 'leader'}
+        )
+
     def list(self, request, *args, **kwargs):
         qs = self.filter_queryset(self.get_queryset())
         serializer = self.get_serializer(qs, many=True)
