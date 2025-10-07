@@ -85,6 +85,13 @@ Functions:
 
 Linking logic: if the options object includes `link_project_id`, after successful create/update the specified project is patched with the new grant_id. In mock mode this is a no-op placeholder.
 
+Extended fields (frontend-prepared):
+
+- `amount` (number) – суммарный бюджет гранта.
+- `leader_id` – пользователь-руководитель гранта; в ответах может сопровождаться `leader_name`.
+
+Backend should accept/emit these fields; mock layer synthesizes `leader_name` as `User #<id>` if not provided.
+
 ## Departments (Academic)
 
 | Function                    | Method / Endpoint             | Notes                                          |

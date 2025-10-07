@@ -9,7 +9,9 @@ import {
 	type NewGrantInput,
 	type UpdateGrantInput,
 } from '../../api/grants'
+import { searchUsers } from '../../api/profileHttp'
 import { listProjects } from '../../api/projects'
+import type { UserPublic } from '../../types/auth'
 import type { ProjectDetail } from '../../types/project'
 import styles from './adminGrantsPage.module.css'
 
@@ -28,6 +30,9 @@ export const AdminGrantsPage: React.FC = () => {
 	const [edit, setEdit] = useState<EditState | null>(null)
 	const [projects, setProjects] = useState<ProjectDetail[]>([])
 	const [projError, setProjError] = useState<string | null>(null)
+	const [leaderQuery, setLeaderQuery] = useState('')
+	const [leaderOptions, setLeaderOptions] = useState<UserPublic[]>([])
+	const [loadingLeaders, setLoadingLeaders] = useState(false)
 
 	async function reload() {
 		setLoading(true)
@@ -63,6 +68,28 @@ export const AdminGrantsPage: React.FC = () => {
 		loadProjects()
 	}, [])
 
+	// Debounced leader search
+	useEffect(() => {
+		let aborted = false
+		if (!edit) return
+		async function run() {
+			setLoadingLeaders(true)
+			try {
+				const list = await searchUsers(leaderQuery)
+				if (!aborted) setLeaderOptions(list.slice(0, 20))
+			} catch {
+				if (!aborted) setLeaderOptions([])
+			} finally {
+				if (!aborted) setLoadingLeaders(false)
+			}
+		}
+		const t = setTimeout(run, 250)
+		return () => {
+			aborted = true
+			clearTimeout(t)
+		}
+	}, [leaderQuery, edit])
+
 	const selected = useMemo(
 		() => items.find(g => g.id === selectedId) || null,
 		[items, selectedId]
@@ -89,6 +116,8 @@ export const AdminGrantsPage: React.FC = () => {
 					start_date: d.start_date || undefined,
 					end_date: d.end_date || undefined,
 					description: (d as any).description?.trim() || undefined,
+					amount: d.amount ? Number(d.amount) : undefined,
+					leader_id: d.leader_id ?? null,
 				}
 				const created = await createGrant(payload, {
 					link_project_id: d.link_project_id || undefined,
@@ -102,6 +131,8 @@ export const AdminGrantsPage: React.FC = () => {
 					start_date: d.start_date || undefined,
 					end_date: d.end_date || undefined,
 					description: (d as any).description?.trim(),
+					amount: d.amount ? Number(d.amount) : undefined,
+					leader_id: d.leader_id ?? null,
 				}
 				const updated = await updateGrant(d.id, patch, {
 					link_project_id: d.link_project_id || undefined,
@@ -321,6 +352,123 @@ export const AdminGrantsPage: React.FC = () => {
 								}
 								rows={4}
 							/>
+						</label>
+						<label className={styles.field}>
+							<span>Сумма (₽)</span>
+							<input
+								type='number'
+								min={0}
+								value={edit.data.amount ?? ''}
+								onChange={e =>
+									setEdit(
+										s =>
+											s && {
+												...s,
+												data: {
+													...s.data,
+													amount: e.target.value
+														? Number(e.target.value)
+														: undefined,
+												},
+											}
+									)
+								}
+							/>
+						</label>
+						<label className={styles.field}>
+							<span>Руководитель гранта</span>
+							<input
+								type='text'
+								placeholder='Поиск пользователя...'
+								value={leaderQuery}
+								onChange={e => setLeaderQuery(e.target.value)}
+								style={{ marginBottom: 6 }}
+							/>
+							<div
+								style={{
+									maxHeight: 160,
+									overflowY: 'auto',
+									border: '1px solid var(--adm-input-border,#cbd5e1)',
+									borderRadius: 6,
+									padding: '6px 8px',
+									background: 'var(--adm-input-bg,#fff)',
+								}}
+							>
+								{loadingLeaders && (
+									<div style={{ fontSize: 12, color: 'var(--adm-text-muted)' }}>
+										Загрузка...
+									</div>
+								)}
+								{!loadingLeaders &&
+									leaderOptions.length === 0 &&
+									leaderQuery && (
+										<div
+											style={{ fontSize: 12, color: 'var(--adm-text-muted)' }}
+										>
+											Нет результатов
+										</div>
+									)}
+								<ul
+									style={{
+										listStyle: 'none',
+										margin: 0,
+										padding: 0,
+										display: 'flex',
+										flexDirection: 'column',
+										gap: 4,
+									}}
+								>
+									{leaderOptions.map(u => {
+										const selected = edit.data.leader_id === u.id
+										return (
+											<li key={u.id} style={{ fontSize: 12 }}>
+												<label
+													style={{
+														display: 'flex',
+														gap: 6,
+														alignItems: 'center',
+														cursor: 'pointer',
+													}}
+												>
+													<input
+														type='radio'
+														checked={selected}
+														onChange={() =>
+															setEdit(
+																s =>
+																	s && {
+																		...s,
+																		data: {
+																			...s.data,
+																			leader_id: u.id,
+																			leader_name:
+																				u.full_name ||
+																				`${u.first_name} ${u.last_name}`,
+																		},
+																	}
+															)
+														}
+													/>
+													<span>
+														{u.full_name || `${u.first_name} ${u.last_name}`}
+													</span>
+												</label>
+											</li>
+										)
+									})}
+								</ul>
+							</div>
+							{edit.data.leader_id && (
+								<div
+									style={{
+										fontSize: 11,
+										color: 'var(--adm-text-muted)',
+										marginTop: 4,
+									}}
+								>
+									Выбран ID: {edit.data.leader_id}
+								</div>
+							)}
 						</label>
 						<label className={styles.field}>
 							<span>Связать с проектом</span>

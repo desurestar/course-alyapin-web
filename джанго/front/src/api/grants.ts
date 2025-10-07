@@ -8,6 +8,9 @@ export interface GrantSummary {
 	agency?: string
 	start_date?: string
 	end_date?: string
+	amount?: number
+	leader_id?: number | null
+	leader_name?: string
 }
 
 export interface GrantDetail extends GrantSummary {
@@ -21,6 +24,8 @@ export interface NewGrantInput {
 	start_date?: string
 	end_date?: string
 	description?: string
+	amount?: number
+	leader_id?: number | null
 }
 
 export interface UpdateGrantInput {
@@ -30,6 +35,8 @@ export interface UpdateGrantInput {
 	start_date?: string | null
 	end_date?: string | null
 	description?: string | null
+	amount?: number | null
+	leader_id?: number | null
 }
 
 const USE_MOCK = API_USE_MOCK
@@ -43,6 +50,9 @@ let mockGrants: GrantSummary[] = [
 		agency: 'ScienceFund',
 		start_date: '2025-01-01',
 		end_date: '2025-12-31',
+		amount: 1200000,
+		leader_id: 1,
+		leader_name: 'Иванов И.И.',
 	},
 	{
 		id: 2,
@@ -51,6 +61,9 @@ let mockGrants: GrantSummary[] = [
 		agency: 'HealthGov',
 		start_date: '2025-03-01',
 		end_date: '2026-02-28',
+		amount: 800000,
+		leader_id: 2,
+		leader_name: 'Петров П.П.',
 	},
 	{
 		id: 3,
@@ -59,6 +72,9 @@ let mockGrants: GrantSummary[] = [
 		agency: 'Минобр',
 		start_date: '2024-09-01',
 		end_date: '2025-08-31',
+		amount: 450000,
+		leader_id: 3,
+		leader_name: 'Сидорова А.А.',
 	},
 ]
 
@@ -93,6 +109,10 @@ export async function createGrant(
 		await delay()
 		const id = Math.max(0, ...mockGrants.map(g => g.id)) + 1
 		const base: GrantDetail = { id, ...payload }
+		// Mock enrich leader name if we have id
+		if (base.leader_id && !base.leader_name) {
+			base.leader_name = `User #${base.leader_id}`
+		}
 		mockGrants.unshift(base)
 		// Simulate linking to a project by calling a future project update (noop here)
 		return { ...base }
@@ -136,6 +156,17 @@ export async function updateGrant(
 				: {}),
 			...(patch.end_date !== undefined
 				? { end_date: patch.end_date || undefined }
+				: {}),
+			...(patch.amount !== undefined
+				? { amount: patch.amount ?? undefined }
+				: {}),
+			...(patch.leader_id !== undefined
+				? {
+						leader_id: patch.leader_id,
+						leader_name: patch.leader_id
+							? `User #${patch.leader_id}`
+							: undefined,
+				  }
 				: {}),
 		}
 		return { ...mockGrants[idx], description: 'Mock description' }
