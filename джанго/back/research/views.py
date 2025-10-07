@@ -35,7 +35,15 @@ class ArticleViewSet(viewsets.ModelViewSet):
         if author_id:
             qs = qs.filter(authors__id=author_id)
         page = int(request.query_params.get('page', 1) or 1)
-        page_size = int(request.query_params.get('page_size', 20) or 20)
+        try:
+            page_size = int(request.query_params.get('page_size', 20) or 20)
+        except ValueError:
+            page_size = 20
+        # enforce bounds
+        if page_size < 1:
+            page_size = 1
+        if page_size > 100:
+            page_size = 100
         total = qs.count()
         start = (page - 1) * page_size
         qs = qs.order_by('-id')[start:start+page_size]
@@ -317,12 +325,16 @@ class GroupArticleView(APIView):
         return Response(serializer.data)
 
     def delete(self, request, group_id:int, article_id:int):
-        article = Article.objects.filter(pk=article_id, in_groups__group_id=group_id).first()
-        if not article:
+        # Detach article from group instead of deleting the article globally
+        link = GroupArticle.objects.filter(article_id=article_id, group_id=group_id).first()
+        if not link:
             return Response(status=204)
+        article = link.article
         if not article.authors.filter(id=request.user.id).exists():
             return Response({'detail':'Нет прав'}, status=403)
-        article.delete()
+        link.delete()
+        # Optionally delete article if it no longer linked to any group and has no other authors? Business decision.
+        # Keeping article intact.
         return Response(status=204)
 
 class GroupProjectActionsView(APIView):

@@ -3,11 +3,10 @@ import type {
 	ProfileArticle,
 	UpdateArticleInput,
 } from '../types/profile'
-import { API_USE_MOCK } from './config'
 import { http } from './http'
 
 // Toggle to switch between mock profile.ts implementation and real HTTP later
-const USE_MOCK = API_USE_MOCK
+const USE_MOCK = false
 // Real backend endpoints documented below.
 
 // Backend mapping (intended production endpoints):
