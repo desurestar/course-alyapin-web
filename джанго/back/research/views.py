@@ -164,6 +164,7 @@ class ProfileView(APIView):
                 'leader_id': leader_id,
                 'leader_name': getattr(g.leader,'full_name', None),
                 'can_manage': m.role=='leader' and request.user.id == user.id,
+                'members': _members,
             })
         data = {
             'id': user.id,
@@ -357,10 +358,10 @@ class GroupProjectActionsView(APIView):
         return Response(status=204)
 
 class GroupListCreateView(APIView):
+    # Any authenticated user may create a research group. Previously restricted to staff/superuser.
+    permission_classes = [permissions.IsAuthenticated]
     def post(self, request):
-        # Only staff or superuser can create new research groups (policy refinement)
-        if not (request.user.is_staff or request.user.is_superuser):
-            return Response({'detail':'Недостаточно прав для создания группы'}, status=403)
+        # Policy (softened): allow any authenticated user to create a group; leader defaults to creator.
         name = (request.data.get('name') or '').strip()
         if not name:
             return Response({'detail':'Название группы обязательно'}, status=400)

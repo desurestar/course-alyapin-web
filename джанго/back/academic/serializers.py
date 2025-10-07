@@ -78,14 +78,25 @@ class DepartmentSerializer(serializers.ModelSerializer):
     head_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(), source='head', write_only=True, required=False
     )
+    deputy = UserShortSerializer(read_only=True)
+    deputy_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), source='deputy', write_only=True, required=False
+    )
     groups_count = serializers.IntegerField(source='groups.count', read_only=True)
 
     class Meta:
         model = Department
         fields = (
             'id', 'name', 'short_name', 'code', 'description',
-            'head', 'head_id', 'groups_count'
+            'head', 'head_id', 'deputy', 'deputy_id', 'groups_count'
         )
+
+    def validate(self, attrs):
+        head = attrs.get('head', getattr(self.instance, 'head', None) if self.instance else None)
+        deputy = attrs.get('deputy', getattr(self.instance, 'deputy', None) if self.instance else None)
+        if head and deputy and head == deputy:
+            raise serializers.ValidationError({'deputy_id': 'Заместитель не может совпадать с руководителем'})
+        return attrs
 
 class DepartmentDetailSerializer(DepartmentSerializer):
     info = DepartmentInfoSerializer(read_only=True)

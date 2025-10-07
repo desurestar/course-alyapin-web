@@ -87,8 +87,8 @@ export function useAdminDepartments(): UseAdminDepartmentsResult {
 					short_name: form.short_name,
 					code: form.code,
 					description: form.description,
-					head_id: form.head_id,
-					deputy_id: form.deputy_id,
+					head_id: form.head_id ?? null,
+					deputy_id: form.deputy_id ?? null,
 				}
 				const dept = await createDepartment(payload)
 				// set employees if any (mock only)
@@ -122,8 +122,8 @@ export function useAdminDepartments(): UseAdminDepartmentsResult {
 					short_name: form.short_name,
 					code: form.code,
 					description: form.description,
-					head_id: form.head_id,
-					deputy_id: form.deputy_id,
+					head_id: form.head_id ?? null,
+					deputy_id: form.deputy_id ?? null,
 				}
 				const updated = await updateDepartment(id, payload)
 				await setDepartmentEmployees(id, form.employee_ids)

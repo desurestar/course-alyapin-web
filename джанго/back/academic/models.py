@@ -18,6 +18,11 @@ class Department(TimeStamped):
         User, null=True, blank=True, on_delete=models.SET_NULL,
         related_name='headed_departments'
     )
+    # Новый заместитель кафедры (опционально)
+    deputy = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='deputy_departments'
+    )
 
     class Meta:
         ordering = ['name']
@@ -43,7 +48,7 @@ class DepartmentInfo(TimeStamped):
 
 class ResearchGroup(TimeStamped):
     department = models.ForeignKey(
-        Department, on_delete=models.CASCADE, related_name='groups'
+        Department, on_delete=models.CASCADE, related_name='groups', null=True, blank=True
     )
     name = models.CharField(max_length=255)
     leader = models.ForeignKey(

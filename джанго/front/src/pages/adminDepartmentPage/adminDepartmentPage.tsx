@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react'
+import { listDepartmentEmployees } from '../../api/department'
 import { useAdminDepartments } from '../../hooks/useAdminDepartments'
 import styles from './adminDepartmentPage.module.css'
 
@@ -53,9 +54,17 @@ export const AdminDepartmentPage: React.FC = () => {
 		setShowModal(true)
 		setLocalError(null)
 	}
-	const openEdit = (id: number) => {
+	const openEdit = async (id: number) => {
 		const d: any = departments.find(dep => dep.id === id)
 		if (!d) return
+		let employee_ids: number[] = d.employee_ids || []
+		try {
+			// Получаем актуальный список сотрудников с бэка
+			const staff: any[] = await listDepartmentEmployees(id)
+			employee_ids = staff.map(s => s.id)
+		} catch {
+			// ignore fetch error; оставим локальные данные
+		}
 		setForm({
 			id: d.id,
 			name: d.name,
@@ -64,7 +73,7 @@ export const AdminDepartmentPage: React.FC = () => {
 			description: d.description,
 			head_id: d.head_id,
 			deputy_id: d.deputy_id,
-			employee_ids: d.employee_ids || [],
+			employee_ids,
 		})
 		setShowModal(true)
 		setLocalError(null)
@@ -168,7 +177,9 @@ export const AdminDepartmentPage: React.FC = () => {
 								<td>{count}</td>
 								<td className={styles.rowActions}>
 									<button
-										onClick={() => openEdit(d.id)}
+										onClick={() => {
+											void openEdit(d.id)
+										}}
 										className={styles.smallBtn}
 									>
 										Изм.

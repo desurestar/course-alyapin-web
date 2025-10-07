@@ -40,7 +40,8 @@ export async function listDepartments(): Promise<Department[]> {
 		const m = await ensureMock()
 		return m.msListDepartments()
 	}
-	return http<Department[]>('departments/', { auth: false })
+	const data = await http<Department[]>('departments/', { auth: false })
+	return data.map(normalizeDepartment)
 }
 
 /** Создание кафедры (требует staff права). */
@@ -51,11 +52,12 @@ export async function createDepartment(
 		const m = await ensureMock()
 		return m.msCreateDepartment(data)
 	}
-	return http<Department>('departments/', {
+	const created = await http<Department>('departments/', {
 		method: 'POST',
 		body: JSON.stringify(data),
 		auth: true,
 	})
+	return normalizeDepartment(created)
 }
 
 /** Обновление кафедры. Используем PATCH чтобы отправлять только изменённые поля. */
@@ -67,11 +69,12 @@ export async function updateDepartment(
 		const m = await ensureMock()
 		return m.msUpdateDepartment(id, data)
 	}
-	return http<Department>(`departments/${id}/`, {
+	const updated = await http<Department>(`departments/${id}/`, {
 		method: 'PATCH',
 		body: JSON.stringify(data),
 		auth: true,
 	})
+	return normalizeDepartment(updated)
 }
 
 /** Удаление кафедры. */
@@ -185,10 +188,28 @@ export async function setDepartmentEmployees(
 		m.msSetDepartmentEmployees(departmentId, employeeIds)
 		return
 	}
-	// For real backend we would diff and call add/remove endpoints; left unimplemented now.
+	// Реальная реализация: получаем текущих сотрудников и делаем diff add/remove
+	try {
+		const current: any[] = await listDepartmentEmployees(departmentId)
+		const currentIds = new Set<number>(current.map(e => e.id))
+		const desired = new Set<number>(employeeIds)
+		const toAdd: number[] = []
+		const toRemove: number[] = []
+		for (const id of desired) if (!currentIds.has(id)) toAdd.push(id)
+		for (const id of currentIds) if (!desired.has(id)) toRemove.push(id)
+		for (const id of toAdd) {
+			await addDepartmentEmployee(departmentId, id)
+		}
+		for (const id of toRemove) {
+			await removeDepartmentEmployee(departmentId, id)
+		}
+	} catch (e) {
+		// swallow or rethrow? выбрасываем чтобы UI показал ошибку
+		throw e
+	}
 }
 
-// Utility: нормализовать payload перед отправкой (обрезка пробелов, undefined вместо пустых строк)
+/** Utility: нормализовать payload перед отправкой (обрезка пробелов, undefined вместо пустых строк) */
 export function buildDepartmentPayload(
 	raw: Partial<DepartmentInput>
 ): DepartmentInput {
@@ -198,5 +219,14 @@ export function buildDepartmentPayload(
 		code: raw.code?.trim() || undefined,
 		description: raw.description?.trim() || undefined,
 		head_id: raw.head_id ?? undefined,
+	}
+}
+
+/** Normalize department object from the server */
+function normalizeDepartment(d: any): Department {
+	return {
+		...d,
+		head_id: d.head_id ?? d.head?.id ?? null,
+		deputy_id: d.deputy_id ?? d.deputy?.id ?? null,
 	}
 }

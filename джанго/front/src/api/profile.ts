@@ -207,7 +207,20 @@ export async function createGroup(
 		group.members_count = m.groupMembers[id].length
 		return { ...group }
 	}
-	return createGroupApi(currentUserId, input)
+	const raw = await createGroupApi(currentUserId, input)
+	// Нормализация к формату ProfileGroup используемому в ProfileView
+	return {
+		id: raw.id,
+		name: raw.name,
+		description: raw.description,
+		members_count: raw.members_count ?? raw.members?.length ?? 1,
+		leader_id: raw.leader_id,
+		leader_name: raw.leader_name,
+		role: 'Руководитель',
+		is_leader: true,
+		can_manage: true,
+		members: raw.members || [],
+	}
 }
 
 export async function updateGroup(
