@@ -1,0 +1,238 @@
+/* Shared Admin Base Styles */
+
+/* Layout */
+.layoutRow {
+	padding: 24px;
+	display: flex;
+	gap: 24px;
+	align-items: flex-start;
+}
+.layoutListPane {
+	flex: 2;
+}
+.layoutDetailPane {
+	flex: 1;
+	min-width: 320px;
+}
+
+/* Header */
+.headerRow {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+}
+.headerTitle {
+	margin: 0;
+	font-size: 22px;
+	font-weight: 600;
+}
+.grow {
+	flex: 1;
+}
+
+/* Table */
+.table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 12px;
+}
+.table th,
+.table td {
+	padding: 6px 8px;
+	border-bottom: 1px solid var(--adm-table-border, #e3e3e3);
+	font-size: 14px;
+	vertical-align: top;
+}
+.tableRowSelected {
+	background: var(--adm-row-selected, #f5f5f5);
+}
+.tableRowHover:hover {
+	background: var(--adm-row-hover, #f0f7ff);
+}
+.linkBtn {
+	all: unset;
+	cursor: pointer;
+	color: var(--adm-link-color, #0366d6);
+}
+.tableActions {
+	text-align: right;
+	white-space: nowrap;
+}
+
+/* Buttons */
+.btn {
+	cursor: pointer;
+	border: 1px solid var(--adm-btn-border, #ccc);
+	background: var(--adm-btn-bg, #fafafa);
+	padding: 4px 10px;
+	border-radius: 4px;
+	font-size: 13px;
+	line-height: 1.25;
+	font-family: inherit;
+	transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.btn:hover {
+	background: var(--adm-btn-bg-hover, #f0f0f0);
+}
+.btnPrimary {
+	background: var(--adm-primary-bg, #0b62d6);
+	border-color: var(--adm-primary-bg, #0b62d6);
+	color: #fff;
+}
+.btnPrimary:hover {
+	background: var(--adm-primary-bg-hover, #0958bf);
+}
+.btnDanger {
+	border-color: var(--adm-danger-border, #d33);
+	color: var(--adm-danger-text, #d33);
+	background: var(--adm-danger-bg, #fff5f5);
+}
+.btnDanger:hover {
+	background: var(--adm-danger-bg-hover, #ffecec);
+}
+.btnSmall {
+	padding: 2px 6px;
+	font-size: 12px;
+}
+.btnGhost {
+	background: transparent;
+	border-color: var(--adm-btn-border, #ccc);
+	color: inherit;
+}
+.btnFull {
+	width: 100%;
+	text-align: center;
+}
+
+/* Card */
+.card {
+	border: 1px solid var(--adm-card-border, #ddd);
+	padding: 16px;
+	border-radius: 6px;
+	background: var(--adm-card-bg, #fff);
+}
+.card h2 {
+	margin-top: 0;
+	font-size: 18px;
+}
+
+/* Form */
+.form {
+	margin-top: 24px;
+}
+.field {
+	display: block;
+	margin-bottom: 10px;
+}
+.fieldLabel {
+	display: block;
+	font-size: 12px;
+	color: var(--adm-label-color, #555);
+	margin-bottom: 2px;
+	font-weight: 500;
+}
+.input,
+.textarea,
+.select {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 6px 8px;
+	border: 1px solid var(--adm-input-border, #ccc);
+	border-radius: 4px;
+	font-family: inherit;
+	font-size: 14px;
+	background: var(--adm-input-bg, #fff);
+	color: inherit;
+}
+.textarea {
+	resize: vertical;
+}
+.inline {
+	display: flex;
+	gap: 8px;
+}
+.inline > * {
+	flex: 1;
+}
+.switchRow {
+	display: flex;
+	gap: 12px;
+	margin: 12px 0;
+}
+.switchItem {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	font-size: 13px;
+}
+
+/* Helpers */
+.muted {
+	color: #666;
+	font-size: 12px;
+}
+.tagsHelp {
+	font-size: 11px;
+	color: #777;
+	margin-top: -6px;
+	margin-bottom: 6px;
+}
+.spaceTop {
+	margin-top: 16px;
+}
+
+/* Focus states */
+.btn:focus-visible,
+.input:focus-visible,
+.textarea:focus-visible,
+.select:focus-visible,
+.linkBtn:focus-visible {
+	outline: 2px solid var(--adm-focus-outline, #2269c9);
+	outline-offset: 2px;
+}
+
+/* Light/Dark adaptive tokens (default assumes light body text on dark bg; override in light mode) */
+:root {
+	--adm-table-border: #e3e3e3;
+	--adm-row-selected: #f5f5f5;
+	--adm-row-hover: #eef6ff;
+	--adm-btn-border: #ccc;
+	--adm-btn-bg: #fafafa;
+	--adm-btn-bg-hover: #f0f0f0;
+	--adm-primary-bg: #0b62d6;
+	--adm-primary-bg-hover: #0958bf;
+	--adm-danger-border: #d33;
+	--adm-danger-text: #d33;
+	--adm-danger-bg: #fff5f5;
+	--adm-danger-bg-hover: #ffecec;
+	--adm-card-border: #ddd;
+	--adm-card-bg: #fff;
+	--adm-input-border: #ccc;
+	--adm-input-bg: #fff;
+	--adm-label-color: #555;
+	--adm-link-color: #0366d6;
+	--adm-focus-outline: #1d6ddc;
+}
+@media (prefers-color-scheme: dark) {
+	:root {
+		--adm-table-border: #394150;
+		--adm-row-selected: #2d3642;
+		--adm-row-hover: #313c4b;
+		--adm-btn-border: #4a5568;
+		--adm-btn-bg: #2d3748;
+		--adm-btn-bg-hover: #36455a;
+		--adm-primary-bg: #2563eb;
+		--adm-primary-bg-hover: #1d4ed8;
+		--adm-danger-border: #f87171;
+		--adm-danger-text: #f87171;
+		--adm-danger-bg: #3f1f1f;
+		--adm-danger-bg-hover: #532626;
+		--adm-card-border: #354154;
+		--adm-card-bg: #1e2936;
+		--adm-input-border: #4a5568;
+		--adm-input-bg: #243244;
+		--adm-label-color: #a0aec0;
+		--adm-link-color: #60a5fa;
+		--adm-focus-outline: #3182ce;
+	}
+}

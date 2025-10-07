@@ -115,7 +115,7 @@ export async function listAdminUsers(
 		const { page = 1, page_size = 20 } = params
 		const filtered = mockUsers.filter(u => matches(u, params))
 		const pg = paginate(filtered, page, page_size)
-		return { ...pg, results: pg.results }
+		return { ...pg, results: pg.results.map(normalizeAdminUser) }
 	}
 	const q = new URLSearchParams()
 	if (params.page) q.set('page', String(params.page))
@@ -124,7 +124,10 @@ export async function listAdminUsers(
 	if (params.is_superuser !== undefined)
 		q.set('is_superuser', String(params.is_superuser))
 	if (params.is_staff !== undefined) q.set('is_staff', String(params.is_staff))
-	return http<PaginatedUsers>(`/admin/users/?${q.toString()}`, { auth: true })
+	const data = await http<PaginatedUsers>(`/admin/users/?${q.toString()}`, {
+		auth: true,
+	})
+	return { ...data, results: data.results.map(normalizeAdminUser) }
 }
 
 export async function getAdminUser(id: number): Promise<AdminUser> {
@@ -132,9 +135,10 @@ export async function getAdminUser(id: number): Promise<AdminUser> {
 		await delay()
 		const u = mockUsers.find(u => u.id === id)
 		if (!u) throw new Error('Пользователь не найден')
-		return { ...u }
+		return normalizeAdminUser(u)
 	}
-	return http<AdminUser>(`/admin/users/${id}/`, { auth: true })
+	const data = await http<AdminUser>(`/admin/users/${id}/`, { auth: true })
+	return normalizeAdminUser(data)
 }
 
 export async function createAdminUser(
@@ -157,13 +161,15 @@ export async function createAdminUser(
 			is_staff: input.is_staff ?? true,
 		}
 		mockUsers.unshift(u)
-		return { ...u }
+		return normalizeAdminUser(u)
 	}
-	return http<AdminUser>(`/admin/users/`, {
+	const payload = prepareCreateAdminUserInput(input)
+	const data = await http<AdminUser>(`/admin/users/`, {
 		method: 'POST',
 		auth: true,
-		body: JSON.stringify(input),
+		body: JSON.stringify(payload),
 	})
+	return normalizeAdminUser(data)
 }
 
 export async function updateAdminUser(
@@ -194,13 +200,15 @@ export async function updateAdminUser(
 			is_staff: patch.is_staff !== undefined ? patch.is_staff : cur.is_staff,
 		}
 		mockUsers[idx] = next
-		return { ...next }
+		return normalizeAdminUser(next)
 	}
-	return http<AdminUser>(`/admin/users/${id}/`, {
+	const clean = prepareUpdateAdminUserInput(patch)
+	const data = await http<AdminUser>(`/admin/users/${id}/`, {
 		method: 'PATCH',
 		auth: true,
-		body: JSON.stringify(patch),
+		body: JSON.stringify(clean),
 	})
+	return normalizeAdminUser(data)
 }
 
 export async function deleteAdminUser(id: number): Promise<void> {
@@ -210,4 +218,77 @@ export async function deleteAdminUser(id: number): Promise<void> {
 		return
 	}
 	await http(`/admin/users/${id}/`, { method: 'DELETE', auth: true })
+}
+
+// ------------------ Helpers / Adapters ------------------ //
+
+/** Normalize API user object to AdminUser (adds full_name fallback) */
+export function normalizeAdminUser(raw: any): AdminUser {
+	return {
+		...raw,
+		full_name:
+			raw.full_name || `${raw.first_name || ''} ${raw.last_name || ''}`.trim(),
+	}
+}
+
+/** Trim & sanitize create payload */
+export function prepareCreateAdminUserInput(
+	input: NewAdminUserInput
+): NewAdminUserInput {
+	return {
+		first_name: input.first_name.trim(),
+		last_name: input.last_name.trim(),
+		email: input.email.trim(),
+		phone: input.phone?.trim() || undefined,
+		password: input.password, // do not trim passwords internally except edges
+		is_superuser: !!input.is_superuser,
+		is_staff: input.is_staff ?? true,
+	}
+}
+
+/** Remove undefined + trim values for update payload */
+export function prepareUpdateAdminUserInput(
+	patch: UpdateAdminUserInput
+): UpdateAdminUserInput {
+	const out: UpdateAdminUserInput = {}
+	if (patch.first_name !== undefined) out.first_name = patch.first_name.trim()
+	if (patch.last_name !== undefined) out.last_name = patch.last_name.trim()
+	if (patch.email !== undefined) out.email = patch.email?.trim() || ''
+	if (patch.phone !== undefined) out.phone = patch.phone?.trim() || null
+	if (patch.password) out.password = patch.password
+	if (patch.is_superuser !== undefined) out.is_superuser = patch.is_superuser
+	if (patch.is_staff !== undefined) out.is_staff = patch.is_staff
+	if (patch.is_active !== undefined) out.is_active = patch.is_active
+	return out
+}
+
+/** Build a minimal diff patch from original & edited objects */
+export function buildAdminUserPatch(
+	original: AdminUser,
+	edited: Partial<AdminUser & { password?: string }>
+): UpdateAdminUserInput {
+	const patch: UpdateAdminUserInput = {}
+	if (
+		edited.first_name !== undefined &&
+		edited.first_name !== original.first_name
+	)
+		patch.first_name = edited.first_name
+	if (edited.last_name !== undefined && edited.last_name !== original.last_name)
+		patch.last_name = edited.last_name
+	if (edited.email !== undefined && edited.email !== original.email)
+		patch.email = edited.email
+	if (edited.phone !== undefined && edited.phone !== original.phone)
+		patch.phone = edited.phone
+	if (edited.password && edited.password.trim())
+		patch.password = edited.password
+	if (
+		edited.is_superuser !== undefined &&
+		edited.is_superuser !== original.is_superuser
+	)
+		patch.is_superuser = edited.is_superuser
+	if (edited.is_staff !== undefined && edited.is_staff !== original.is_staff)
+		patch.is_staff = edited.is_staff
+	if (edited.is_active !== undefined && edited.is_active !== original.is_active)
+		patch.is_active = edited.is_active
+	return patch
 }
