@@ -18,11 +18,15 @@
 .root {
 	width: 100%;
 	margin: 0; /* убираем внешний отступ футера */
-	padding: 16px; /* внутренние отступы — по дизайну */
+	padding: 20px 0; /* внутренние отступы — по дизайну */
 	box-sizing: border-box;
-	background: var(--f-bg);
-	border-top: 1px solid var(--f-border);
-	color: var(--f-text);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background: #1e2937;
+	color: #fff;
+	font-size: 16px;
+	border-top: 1px solid #243244;
 }
 
 /* ЕДИНЫЙ контейнер */
@@ -345,4 +349,9 @@
 .footerSocial,
 .footerPartners {
 	padding-top: 8px;
+}
+
+/* Стили для института */
+.institute {
+	font-weight: 500;
 }
